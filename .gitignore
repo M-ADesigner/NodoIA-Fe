@@ -41,3 +41,10 @@ yarn-error.log*
 next-env.d.ts
 .claude
 SKILL.md
+
+# claude / agents
+.claude/
+CLAUDE.md
+AGENTS.md
+skills-lock.json
+.agents/
