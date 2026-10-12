@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/Button";
 import { ContenidoTable } from "@/components/content/ContenidoTable";
+import { requerirPermiso } from "@/lib/auth/session";
 import { listarArticulos, listarUsuarios } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function ContenidoPage() {
+  await requerirPermiso("gestionar_contenido");
   const [articulos, usuarios] = await Promise.all([
     listarArticulos(),
     listarUsuarios(),
@@ -27,9 +29,9 @@ export default async function ContenidoPage() {
         <Button>+ Nuevo artículo con IA</Button>
       </div>
 
-      <div className="border-primary/30 bg-primary/10 flex flex-col items-start gap-4 rounded-medium border border-dashed px-6 py-5 shadow-nav sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-primary/30 bg-primary/10 rounded-medium shadow-nav flex flex-col items-start gap-4 border border-dashed px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-[#5C7A12] mb-1 text-xs font-bold tracking-widest uppercase">
+          <p className="mb-1 text-xs font-bold tracking-widest text-[#5C7A12] uppercase">
             Sugerencia del asistente
           </p>
           <p className="text-ink text-base">

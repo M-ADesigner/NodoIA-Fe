@@ -15,4 +15,7 @@ export interface Articulo {
   autorId: string;
   actualizadoEn: string;
   publicadoEn?: string;
+  /** Fechas ISO 8601 para <time>, JSON-LD y sitemap. */
+  actualizadoEnIso?: string;
+  publicadoEnIso?: string;
 }

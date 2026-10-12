@@ -1,31 +1,29 @@
-import type { Usuario } from "@/types/user";
+import type { Rol } from "@/types/user";
 
-// Datos de ejemplo — no hay autenticación real todavía (ver
-// Guion_Entrevista_Cliente_CCHIA, sección "Roles y usuarios").
-export const usuariosMock: Usuario[] = [
+// Datos de ejemplo que usa scripts/seed.ts para poblar la BD inicial.
+export const usuariosSeed: {
+  nombre: string;
+  correo: string;
+  rol: Rol;
+  /** Id con el que los artículos de ejemplo referencian al autor. */
+  ref: string;
+}[] = [
   {
-    id: "u1",
+    ref: "u1",
     nombre: "María Fernández",
     correo: "maria.fernandez@cchia.cl",
-    rol: "editor",
-    miembroDesde: "Marzo 2026",
+    rol: "autor",
   },
   {
-    id: "u2",
+    ref: "u2",
     nombre: "Diego Rojas",
     correo: "diego.rojas@cchia.cl",
-    rol: "editor",
-    miembroDesde: "Abril 2026",
+    rol: "autor",
   },
   {
-    id: "u3",
+    ref: "u3",
     nombre: "Javiera Soto",
     correo: "javiera.soto@cchia.cl",
     rol: "revisor",
-    miembroDesde: "Junio 2026",
   },
 ];
-
-export function usuarioPorId(id: string): Usuario | undefined {
-  return usuariosMock.find((usuario) => usuario.id === id);
-}

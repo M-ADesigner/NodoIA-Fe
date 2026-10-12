@@ -4,31 +4,41 @@
   --background: #ffffff;
   --foreground: #18181b;
 
-  /* Paleta CCHIA — ver .claude/skills/cchia-design/SKILL.md */
+  /* Paleta CCHIA */
   --color-primary: #b1e346;
   --color-ink: #18181b;
+  --color-navy-950: #0e2240;
   --color-navy-900: #1a365d;
+  --color-navy-800: #12294a;
   --color-navy-700: #2b77ad;
   --color-navy-500: #4a90c2;
   --color-navy-100: #e6f3ff;
-  --color-border: #dce0d3;
+  --color-border: #e3e8dc;
   --color-border-soft: #d9e0c5;
+  --color-surface: #f6f8f2;
+  --color-lime-soft: #eaf6c9;
+  --color-lime-ink: #3f5210;
 
-  /* Botones reales del sitio: NO son lima — gradiente oscuro con texto blanco */
+  /* Botones: gradiente oscuro con texto blanco; el lima es solo acento. */
   --color-btn-start: #1e293b;
   --color-btn-end: #0f172a;
-  --color-border-btn: #edf0e6;
+  --color-border-btn: #cfd8c6;
   --shadow-btn:
     0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 
-  /* Sombras de tarjetas del sitio */
-  --shadow-nav: 0px 0px 30px rgba(0, 0, 0, 0.05);
-  --shadow-box: 0px 5px 50px 0px rgba(0, 0, 0, 0.07);
+  /* Sombras de tarjetas */
+  --shadow-nav: 0 1px 2px rgba(18, 41, 74, 0.04);
+  --shadow-box: 0 18px 40px -18px rgba(18, 41, 74, 0.25);
 
-  /* Gradientes del sitio */
-  --gradient-hero: linear-gradient(180deg, #1a365d, #1a365d 30%, #2b77ad);
-  --gradient-blue: linear-gradient(135deg, #1a365d, #2b77ad 50%, #4a90c2);
-  --gradient-light: linear-gradient(135deg, #e6f3ff, #4a90c2);
+  /* Gradientes */
+  --gradient-hero: linear-gradient(
+    160deg,
+    #12294a 0%,
+    #1a365d 38%,
+    #2b77ad 100%
+  );
+  --gradient-blue: linear-gradient(135deg, #12294a, #1a365d 55%, #2b77ad);
+  --gradient-light: linear-gradient(180deg, #f6f8f2, #eef2e7);
 }
 
 @theme inline {
@@ -36,12 +46,17 @@
   --color-foreground: var(--foreground);
   --color-primary: var(--color-primary);
   --color-ink: var(--color-ink);
+  --color-navy-950: var(--color-navy-950);
   --color-navy-900: var(--color-navy-900);
+  --color-navy-800: var(--color-navy-800);
   --color-navy-700: var(--color-navy-700);
   --color-navy-500: var(--color-navy-500);
   --color-navy-100: var(--color-navy-100);
   --color-border: var(--color-border);
   --color-border-soft: var(--color-border-soft);
+  --color-surface: var(--color-surface);
+  --color-lime-soft: var(--color-lime-soft);
+  --color-lime-ink: var(--color-lime-ink);
   --color-btn-start: var(--color-btn-start);
   --color-btn-end: var(--color-btn-end);
   --color-border-btn: var(--color-border-btn);
@@ -51,7 +66,7 @@
   --font-sans: var(--font-body);
   --font-heading: var(--font-heading);
   --radius-DEFAULT: 12px;
-  --radius-medium: 20px;
+  --radius-medium: 24px;
 }
 
 body {
@@ -67,6 +82,7 @@ h5,
 h6 {
   font-family: var(--font-heading);
   color: var(--color-ink);
+  letter-spacing: -0.02em;
 }
 
 .bg-cchia-hero {
@@ -79,4 +95,79 @@ h6 {
 
 .bg-cchia-light {
   background-image: var(--gradient-light);
+}
+
+/* Foco visible y consistente para teclado. */
+:focus-visible {
+  outline: 3px solid rgba(43, 119, 173, 0.55);
+  outline-offset: 2px;
+}
+
+/* Motivo de nodos (components/ui/NetworkMotif): se conecta de a poco. */
+@keyframes nodo-linea {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes nodo-aparece {
+  from {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes nodo-respira {
+  0%,
+  100% {
+    opacity: 0.12;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.38;
+    transform: scale(1.35);
+  }
+}
+
+.nodo-linea {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: nodo-linea 1.1s ease-in-out both;
+}
+
+.nodo-punto,
+.nodo-halo {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.nodo-punto {
+  animation: nodo-aparece 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+.nodo-halo {
+  animation: nodo-respira 3.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nodo-linea {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .nodo-punto {
+    animation: none;
+    opacity: 1;
+  }
+  .nodo-halo {
+    animation: none;
+    opacity: 0.22;
+  }
+  .nodo-viajero {
+    display: none;
+  }
 }

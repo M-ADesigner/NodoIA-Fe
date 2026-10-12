@@ -1,65 +1,76 @@
-"use client";
-
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { redirect } from "next/navigation";
+import { cerrarSesion } from "@/app/login/actions";
+import { DashboardNav } from "@/components/dashboard/DashboardNav";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { ROL_LABEL, vistasPermitidas } from "@/lib/auth/roles";
+import { usuarioActual } from "@/lib/auth/session";
+import { NO_INDEXAR } from "@/lib/seo/metadata";
 
-const NAV_ITEMS = [
-  { href: "/dashboard/contenido", label: "Contenido" },
-  { href: "/dashboard/revision", label: "Revisión" },
-  { href: "/dashboard/admin", label: "Administración" },
-];
+export const dynamic = "force-dynamic";
 
-// Sin autenticación todavía: falta definir con el cliente quién ocupa cada
-// rol (ver Guion_Entrevista_Cliente_CCHIA, sección "Roles y usuarios").
-export default function DashboardLayout({
+// El panel interno nunca debe indexarse.
+export const metadata: Metadata = {
+  title: { default: "Panel interno", template: "%s | Panel CCHIA" },
+  robots: NO_INDEXAR,
+};
+
+export default async function DashboardLayout({
   children,
 }: LayoutProps<"/dashboard">) {
-  const pathname = usePathname();
+  // El proxy ya exige un JWT válido; aquí se confirma que el usuario sigue
+  // existiendo y activo. Cada página vuelve a exigir su permiso.
+  const usuario = await usuarioActual();
+  if (!usuario) redirect("/login");
 
-  return (
-    <div className="flex flex-1 flex-col bg-white">
-      <header className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-[1290px] items-center justify-between px-4 py-4 sm:px-8 lg:px-16">
-          <div className="flex items-center gap-3">
-            <Image
-              src="/images/Logo_CCHIA.png"
-              alt="Logo CCHIA"
-              width={120}
-              height={48}
-              className="h-9 w-auto object-contain sm:h-11"
-            />
-            <span className="text-navy-700 hidden text-xs font-bold tracking-widest uppercase sm:inline">
-              Panel interno
-            </span>
-          </div>
-        </div>
+  const items = vistasPermitidas(usuario.rol).map(({ href, label }) => ({
+    href,
+    label,
+  }));
 
-        <nav className="mx-auto flex w-full max-w-[1290px] gap-6 overflow-x-auto px-4 whitespace-nowrap sm:gap-8 sm:px-8 lg:px-16">
-          {NAV_ITEMS.map((item) => {
-            const current = pathname?.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={
-                  current
-                    ? "border-primary text-ink -mb-px border-b-2 pt-1 pb-3.5 text-sm font-bold"
-                    : "text-ink/55 hover:text-ink border-b-2 border-transparent pt-1 pb-3.5 text-sm font-medium transition"
-                }
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </header>
+  const sidebar = (
+    <>
+      <Link
+        href="/"
+        aria-label="Ir al sitio público"
+        className="inline-flex self-start rounded-[14px] bg-white px-3.5 py-2"
+      >
+        <Image
+          src="/images/Logo_CCHIA.png"
+          alt="CCHIA"
+          width={92}
+          height={38}
+          className="h-[38px] w-auto object-contain"
+        />
+      </Link>
 
-      <main className="bg-cchia-light flex flex-1 flex-col">
-        <div className="mx-auto flex w-full max-w-[1290px] flex-1 flex-col px-4 py-8 sm:px-8 sm:py-12 lg:px-16">
-          {children}
-        </div>
-      </main>
-    </div>
+      <div>
+        <p className="mb-2.5 px-3 text-xs font-bold tracking-[0.12em] text-white/55 uppercase">
+          Menú
+        </p>
+        <DashboardNav items={items} />
+      </div>
+
+      <div className="mt-auto flex flex-col gap-1 rounded-2xl bg-white/6 p-4">
+        <span className="text-[15px] font-semibold text-white">
+          {usuario.nombre}
+        </span>
+        <span className="text-[13px] text-white/65">
+          {ROL_LABEL[usuario.rol]}
+        </span>
+        <form action={cerrarSesion} className="mt-3">
+          <button
+            type="submit"
+            className="inline-flex min-h-10 w-full items-center justify-center rounded-full border-[1.5px] border-white/35 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+          >
+            Cerrar sesión
+          </button>
+        </form>
+      </div>
+    </>
   );
+
+  return <DashboardShell sidebar={sidebar}>{children}</DashboardShell>;
 }

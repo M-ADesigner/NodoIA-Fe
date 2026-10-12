@@ -1,9 +1,11 @@
 import { RevisionList } from "@/components/content/RevisionList";
+import { requerirPermiso } from "@/lib/auth/session";
 import { articulosEnRevision, listarUsuarios } from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function RevisionPage() {
+  await requerirPermiso("revisar");
   const [pendientes, usuarios] = await Promise.all([
     articulosEnRevision(),
     listarUsuarios(),
@@ -22,7 +24,7 @@ export default async function RevisionPage() {
           <h1 className="font-heading text-ink text-3xl font-bold sm:text-4xl">
             Cola de revisión
           </h1>
-          <span className="bg-primary/20 text-[#4A5F0E] rounded-full px-3 py-1 text-sm font-bold">
+          <span className="bg-primary/20 rounded-full px-3 py-1 text-sm font-bold text-[#4A5F0E]">
             {pendientes.length} pendientes
           </span>
         </div>

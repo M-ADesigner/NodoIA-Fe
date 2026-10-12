@@ -1,12 +1,11 @@
 import {
+  boolean,
   pgEnum,
   pgTable,
   text,
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-
-export const rolEnum = pgEnum("rol", ["administrador", "editor", "revisor"]);
 
 export const estadoEnum = pgEnum("estado_contenido", [
   "borrador",
@@ -22,11 +21,23 @@ export const categoriaEnum = pgEnum("categoria_contenido", [
   "Noticia institucional",
 ]);
 
+export const roles = pgTable("roles", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  clave: text("clave").notNull().unique(),
+  nombre: text("nombre").notNull(),
+  descripcion: text("descripcion").notNull().default(""),
+});
+
 export const usuarios = pgTable("usuarios", {
   id: uuid("id").primaryKey().defaultRandom(),
   nombre: text("nombre").notNull(),
   correo: text("correo").notNull().unique(),
-  rol: rolEnum("rol").notNull(),
+  rolId: uuid("rol_id")
+    .notNull()
+    .references(() => roles.id),
+  passwordHash: text("password_hash").notNull(),
+  activo: boolean("activo").notNull().default(true),
+  ultimoAcceso: timestamp("ultimo_acceso", { withTimezone: true }),
   miembroDesde: timestamp("miembro_desde", { withTimezone: true })
     .notNull()
     .defaultNow(),

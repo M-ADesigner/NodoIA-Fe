@@ -30,7 +30,7 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         onClick={(event) => event.stopPropagation()}
-        className="border-border shadow-nav flex w-full max-w-sm flex-col gap-4 rounded-medium border bg-white p-6"
+        className="shadow-box flex w-full max-w-md flex-col gap-4 rounded-[28px] bg-white p-7"
       >
         <div className="flex items-start justify-between gap-4">
           <h2 className="font-heading text-ink text-lg font-bold">{title}</h2>

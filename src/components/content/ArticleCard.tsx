@@ -1,21 +1,50 @@
 import Link from "next/link";
-import type { Articulo } from "@/types/content";
+import { rutaArticulo } from "@/lib/seo/site";
+import type { Articulo, CategoriaContenido } from "@/types/content";
 
-export function ArticleCard({ articulo }: { articulo: Articulo }) {
+// Colores de la etiqueta por categoría (alineados con el sistema de marca).
+const CATEGORIA_CLASS: Record<CategoriaContenido, string> = {
+  Artículo: "bg-[#f1ece3] text-[#5a4630]",
+  Boletín: "bg-navy-100 text-navy-900",
+  "Noticia institucional": "bg-lime-soft text-lime-ink",
+};
+
+export function ArticleCard({
+  articulo,
+  headingLevel = 3,
+}: {
+  articulo: Articulo;
+  /** Nivel del título, para no saltarse niveles según dónde se use. */
+  headingLevel?: 2 | 3;
+}) {
+  const Heading = `h${headingLevel}` as const;
+  const href = rutaArticulo(articulo.slug);
+
   return (
-    <article className="border-border shadow-nav flex flex-col gap-2.5 rounded-medium border bg-white p-7 transition-shadow hover:shadow-box">
-      <span className="text-[#5C7A12] text-xs font-bold tracking-widest uppercase">
+    <article className="border-border shadow-nav rounded-medium hover:shadow-box flex flex-col gap-3 border bg-white p-7 transition hover:-translate-y-0.5">
+      <span
+        className={`self-start rounded-full px-3 py-1 text-xs font-bold tracking-[0.06em] uppercase ${CATEGORIA_CLASS[articulo.categoria]}`}
+      >
         {articulo.categoria}
       </span>
-      <h3 className="font-heading text-ink text-xl font-semibold">
-        {articulo.titulo}
-      </h3>
-      <p className="text-ink/65 text-sm leading-relaxed">{articulo.resumen}</p>
-      <div className="text-ink/45 mt-2 flex justify-between text-xs">
-        <span>{articulo.publicadoEn}</span>
+      <Heading className="font-heading text-navy-800 mt-1 text-[21px] leading-[1.3] font-bold">
+        <Link href={href} className="hover:underline">
+          {articulo.titulo}
+        </Link>
+      </Heading>
+      <p className="text-[15px] leading-relaxed text-slate-600">
+        {articulo.resumen}
+      </p>
+      <div className="mt-auto flex items-center justify-between pt-3 text-[13px] text-slate-500">
+        {articulo.publicadoEn ? (
+          <time dateTime={articulo.publicadoEnIso}>{articulo.publicadoEn}</time>
+        ) : (
+          <span />
+        )}
         <Link
-          href={`/articulos/${articulo.slug}`}
-          className="text-navy-700 font-semibold"
+          href={href}
+          className="text-navy-700 text-[15px] font-semibold"
+          aria-label={`Leer más: ${articulo.titulo}`}
         >
           Leer más →
         </Link>
