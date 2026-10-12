@@ -9,17 +9,22 @@ export default function RevisionPage() {
   );
 
   return (
-    <main className="flex flex-col gap-6 px-4 py-8 sm:px-8 sm:py-10 lg:px-16">
-      <div className="flex items-baseline justify-between">
-        <h1 className="font-heading text-ink text-2xl font-bold">
-          Cola de revisión
-        </h1>
-        <span className="text-ink/55 text-sm">
-          {pendientes.length} pendientes
-        </span>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-2">
+        <p className="text-navy-700 text-sm font-bold tracking-widest uppercase">
+          Revisión
+        </p>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h1 className="font-heading text-ink text-3xl font-bold sm:text-4xl">
+            Cola de revisión
+          </h1>
+          <span className="bg-primary/20 text-[#4A5F0E] rounded-full px-3 py-1 text-sm font-bold">
+            {pendientes.length} pendientes
+          </span>
+        </div>
       </div>
 
       <RevisionList pendientes={pendientes} usuariosPorId={usuariosPorId} />
-    </main>
+    </div>
   );
 }

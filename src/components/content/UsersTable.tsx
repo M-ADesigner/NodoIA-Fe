@@ -37,42 +37,45 @@ export function UsersTable({
 
   return (
     <>
-      <div className="border-border overflow-hidden rounded-xl border">
+      <div className="border-border shadow-nav overflow-hidden rounded-medium border bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[420px] text-sm">
             <thead>
-              <tr className="border-border text-ink/45 border-b text-xs font-bold tracking-wide uppercase">
-                <th className="px-5 py-3.5 text-left">Usuario</th>
-                <th className="px-5 py-3.5 text-left">Rol</th>
-                <th className="px-5 py-3.5"></th>
+              <tr className="border-border text-ink/45 border-b text-xs font-bold tracking-widest uppercase">
+                <th className="px-6 py-4 text-left">Usuario</th>
+                <th className="px-6 py-4 text-left">Rol</th>
+                <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody>
               {usuarios.map((usuario) => (
                 <tr
                   key={usuario.id}
-                  className="border-b border-[#ECEFE6] last:border-0"
+                  className="border-b border-[#ECEFE6] last:border-0 hover:bg-[#F7FAF0]"
                 >
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2.5">
-                      <span className="bg-navy-100 text-navy-900 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <span className="bg-navy-100 text-navy-900 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold">
                         {iniciales(usuario.nombre)}
                       </span>
-                      {usuario.nombre}
+                      <div>
+                        <p className="text-ink font-semibold">{usuario.nombre}</p>
+                        <p className="text-ink/45 text-xs">{usuario.correo}</p>
+                      </div>
                     </div>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-6 py-4">
                     <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${ROL_CLASS[usuario.rol]}`}
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${ROL_CLASS[usuario.rol]}`}
                     >
                       {ROL_LABEL[usuario.rol]}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5">
+                  <td className="px-6 py-4">
                     <button
                       type="button"
                       onClick={() => setSeleccionado(usuario)}
-                      className="text-navy-700 font-semibold"
+                      className="text-navy-700 font-semibold hover:underline"
                     >
                       Editar
                     </button>

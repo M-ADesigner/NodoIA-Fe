@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Field } from "@/components/ui/Field";
+import { EstadoBadge } from "@/components/content/EstadoBadge";
 import type { Articulo } from "@/types/content";
 import type { Usuario } from "@/types/user";
 
@@ -29,12 +30,15 @@ export function RevisionList({
           return (
             <div
               key={articulo.id}
-              className="border-border flex flex-col items-start gap-4 rounded-xl border px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+              className="border-border shadow-nav flex flex-col items-start gap-4 rounded-medium border bg-white px-6 py-5 transition-shadow hover:shadow-box sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <p className="text-ink text-[15px] font-bold">
-                  {articulo.titulo}
-                </p>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <p className="text-ink font-heading text-base font-bold">
+                    {articulo.titulo}
+                  </p>
+                  <EstadoBadge estado={articulo.estado} />
+                </div>
                 <p className="text-ink/55 mt-1 text-sm">
                   Enviado por {autor?.nombre} (Editor) ·{" "}
                   {articulo.actualizadoEn}

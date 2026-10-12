@@ -20,6 +20,15 @@
   --color-border-btn: #edf0e6;
   --shadow-btn:
     0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  /* Sombras de tarjetas del sitio */
+  --shadow-nav: 0px 0px 30px rgba(0, 0, 0, 0.05);
+  --shadow-box: 0px 5px 50px 0px rgba(0, 0, 0, 0.07);
+
+  /* Gradientes del sitio */
+  --gradient-hero: linear-gradient(180deg, #1a365d, #1a365d 30%, #2b77ad);
+  --gradient-blue: linear-gradient(135deg, #1a365d, #2b77ad 50%, #4a90c2);
+  --gradient-light: linear-gradient(135deg, #e6f3ff, #4a90c2);
 }
 
 @theme inline {
@@ -37,6 +46,8 @@
   --color-btn-end: var(--color-btn-end);
   --color-border-btn: var(--color-border-btn);
   --shadow-btn: var(--shadow-btn);
+  --shadow-nav: var(--shadow-nav);
+  --shadow-box: var(--shadow-box);
   --font-sans: var(--font-body);
   --font-heading: var(--font-heading);
   --radius-DEFAULT: 12px;
@@ -56,4 +67,16 @@ h5,
 h6 {
   font-family: var(--font-heading);
   color: var(--color-ink);
+}
+
+.bg-cchia-hero {
+  background-image: var(--gradient-hero);
+}
+
+.bg-cchia-blue {
+  background-image: var(--gradient-blue);
+}
+
+.bg-cchia-light {
+  background-image: var(--gradient-light);
 }

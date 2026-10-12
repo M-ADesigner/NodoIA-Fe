@@ -20,29 +20,45 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="flex flex-col gap-6 px-4 py-8 sm:px-8 sm:py-10 lg:px-16">
-      <h1 className="font-heading text-ink text-2xl font-bold">
-        Administración
-      </h1>
+    <div className="flex flex-col gap-8">
+      <div className="flex flex-col gap-2">
+        <p className="text-navy-700 text-sm font-bold tracking-widest uppercase">
+          Administración
+        </p>
+        <h1 className="font-heading text-ink text-3xl font-bold sm:text-4xl">
+          Panel de control
+        </h1>
+        <p className="text-ink/60 max-w-xl text-base">
+          Gestiona usuarios, revisa el avance del contenido y mantén al día la
+          plataforma.
+        </p>
+      </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="border-border flex flex-col gap-1.5 rounded-xl border p-5"
+            className="bg-cchia-blue shadow-nav flex flex-col gap-2 rounded-medium p-7"
           >
-            <span className="font-heading text-ink text-3xl font-extrabold">
+            <span className="font-heading text-white text-4xl font-extrabold">
               {stat.valor}
             </span>
-            <span className="text-ink/55 text-sm">{stat.label}</span>
+            <span className="text-sm font-medium text-white/80">
+              {stat.label}
+            </span>
           </div>
         ))}
       </div>
 
-      <UsersTable
-        usuarios={usuariosMock}
-        articulosPorUsuario={articulosPorUsuario}
-      />
-    </main>
+      <section className="flex flex-col gap-4">
+        <h2 className="font-heading text-ink text-xl font-bold sm:text-2xl">
+          Usuarios
+        </h2>
+        <UsersTable
+          usuarios={usuariosMock}
+          articulosPorUsuario={articulosPorUsuario}
+        />
+      </section>
+    </div>
   );
 }

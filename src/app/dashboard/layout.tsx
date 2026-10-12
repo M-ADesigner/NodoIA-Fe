@@ -19,46 +19,47 @@ export default function DashboardLayout({
 
   return (
     <div className="flex flex-1 flex-col bg-white">
-      <div className="flex items-center justify-between px-4 py-4 sm:px-8 lg:px-16">
-        <div className="flex items-baseline gap-2.5">
-          <Image
-            src="/images/Logo_CCHIA.png"
-            alt="Logo CCHIA"
-            width={87}
-            height={36}
-            className="h-9 w-auto object-contain"
-          />
-          <span className="text-ink/50 text-sm">Panel interno</span>
+      <header className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur">
+        <div className="mx-auto flex w-full max-w-[1290px] items-center justify-between px-4 py-4 sm:px-8 lg:px-16">
+          <div className="flex items-center gap-3">
+            <Image
+              src="/images/Logo_CCHIA.png"
+              alt="Logo CCHIA"
+              width={120}
+              height={48}
+              className="h-9 w-auto object-contain sm:h-11"
+            />
+            <span className="text-navy-700 hidden text-xs font-bold tracking-widest uppercase sm:inline">
+              Panel interno
+            </span>
+          </div>
         </div>
 
-        <a
-          href="/api/auth/logout"
-          className="border-border-btn text-ink hover:bg-primary/10 rounded-full border px-4 py-1.5 text-sm font-medium transition"
-        >
-          Cerrar sesión
-        </a>
-      </div>
+        <nav className="mx-auto flex w-full max-w-[1290px] gap-6 overflow-x-auto px-4 whitespace-nowrap sm:gap-8 sm:px-8 lg:px-16">
+          {NAV_ITEMS.map((item) => {
+            const current = pathname?.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={
+                  current
+                    ? "border-primary text-ink -mb-px border-b-2 pt-1 pb-3.5 text-sm font-bold"
+                    : "text-ink/55 hover:text-ink border-b-2 border-transparent pt-1 pb-3.5 text-sm font-medium transition"
+                }
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </header>
 
-      <nav className="border-border text-ink/55 flex gap-5 overflow-x-auto border-b px-4 text-sm whitespace-nowrap sm:gap-8 sm:px-8 lg:px-16">
-        {NAV_ITEMS.map((item) => {
-          const current = pathname?.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={
-                current
-                  ? "border-primary text-ink border-b-2 py-4 font-semibold"
-                  : "border-b-2 border-transparent py-4"
-              }
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {children}
+      <main className="bg-cchia-light flex flex-1 flex-col">
+        <div className="mx-auto flex w-full max-w-[1290px] flex-1 flex-col px-4 py-8 sm:px-8 sm:py-12 lg:px-16">
+          {children}
+        </div>
+      </main>
     </div>
   );
 }

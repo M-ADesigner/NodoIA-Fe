@@ -4,7 +4,7 @@ const ESTADOS: Record<EstadoContenido, { label: string; className: string }> = {
   borrador: { label: "Borrador", className: "bg-[#ECEFE6] text-[#74766D]" },
   asistido_ia: {
     label: "Asistido por IA",
-    className: "bg-primary/28 text-[#4A5F0E]",
+    className: "bg-primary/20 text-[#4A5F0E]",
   },
   en_revision: {
     label: "En revisión",

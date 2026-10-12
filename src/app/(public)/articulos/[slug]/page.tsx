@@ -12,11 +12,11 @@ export default async function ArticuloPage(
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-10 sm:px-8 sm:py-16 lg:px-16">
-      <span className="text-xs font-bold tracking-wide text-[#5C7A12] uppercase">
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-5 pt-[160px] pb-20 max-sm:pt-[140px]">
+      <span className="text-[#5C7A12] text-xs font-bold tracking-widest uppercase">
         {articulo.categoria}
       </span>
-      <h1 className="text-ink text-[32px] leading-tight font-extrabold lg:text-[38px]">
+      <h1 className="text-ink text-[32px] leading-[1.33] font-bold xl:text-[36px]">
         {articulo.titulo}
       </h1>
       <p className="text-ink/45 text-xs">{articulo.publicadoEn}</p>

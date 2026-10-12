@@ -3,11 +3,11 @@ import type { Articulo } from "@/types/content";
 
 export function ArticleCard({ articulo }: { articulo: Articulo }) {
   return (
-    <article className="border-border flex flex-col gap-2.5 rounded-xl border p-6">
-      <span className="text-xs font-bold tracking-wide text-[#5C7A12] uppercase">
+    <article className="border-border shadow-nav flex flex-col gap-2.5 rounded-medium border bg-white p-7 transition-shadow hover:shadow-box">
+      <span className="text-[#5C7A12] text-xs font-bold tracking-widest uppercase">
         {articulo.categoria}
       </span>
-      <h3 className="font-heading text-ink text-base leading-snug font-bold">
+      <h3 className="font-heading text-ink text-xl font-semibold">
         {articulo.titulo}
       </h3>
       <p className="text-ink/65 text-sm leading-relaxed">{articulo.resumen}</p>

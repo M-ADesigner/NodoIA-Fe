@@ -3,6 +3,9 @@ import { buttonClasses } from "@/components/ui/Button";
 import { ArticleCard } from "@/components/content/ArticleCard";
 import { articulosPublicados } from "@/lib/content/mock-articulos";
 
+const HAZTE_SOCIO_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSdRNGNM10IHgnvAnfOl75xvsgVm1hqwepqN-uqEy4ZjFOiQEg/viewform?usp=send_form";
+
 const BENEFICIOS = [
   "Acceso a eventos exclusivos",
   "Networking con expertos",
@@ -12,15 +15,16 @@ const BENEFICIOS = [
 function CheckIcon() {
   return (
     <svg
-      width="11"
-      height="11"
+      width="20"
+      height="20"
       viewBox="0 0 20 20"
       fill="none"
       aria-hidden="true"
     >
+      <rect width="20" height="20" rx="10" className="fill-primary" />
       <path
-        d="M9.3 13.8L14.7 8.4C15.1 8.1 15.1 7.6 14.7 7.2C14.4 6.9 13.9 6.9 13.5 7.2L8.7 12L6.5 9.8C6.1 9.5 5.6 9.5 5.3 9.8C4.9 10.1 4.9 10.6 5.3 11L8.1 13.8C8.3 13.9 8.5 14 8.7 14C8.9 14 9.1 13.9 9.3 13.8Z"
-        fill="#FFFFFF"
+        d="M9.31661 13.7561L14.7491 8.42144C15.0836 8.0959 15.0836 7.5697 14.7491 7.24416C14.4145 6.91861 13.8736 6.91861 13.539 7.24416L8.7116 11.9901L6.46096 9.78807C6.12636 9.46253 5.58554 9.46253 5.25095 9.78807C4.91635 10.1136 4.91635 10.6398 5.25095 10.9654L8.1066 13.7561C8.27347 13.9184 8.49253 14 8.7116 14C8.93067 14 9.14974 13.9184 9.31661 13.7561Z"
+        className="fill-white"
       />
     </svg>
   );
@@ -31,56 +35,56 @@ export default function Home() {
 
   return (
     <>
-      <section
-        className="flex flex-col items-center gap-6 px-4 py-10 text-center sm:gap-7 sm:px-8 sm:py-14 lg:px-16"
-        style={{
-          backgroundImage:
-            "linear-gradient(180deg, #1A365D 0%, #1A365D 30%, #2B77AD 100%)",
-        }}
-      >
-        <p className="text-sm font-medium tracking-wide text-white uppercase">
-          Cámara Chilena de Inteligencia Artificial
-        </p>
-        <h1 className="text-wrap-balance max-w-3xl text-4xl leading-tight font-bold text-white xl:text-[64px] xl:leading-[1.33]">
-          Impulsando la Inteligencia Artificial en Chile.
-        </h1>
-        <p className="max-w-xl text-lg leading-relaxed text-white">
-          Únete a la organización líder en IA de Chile. Conecta, innova y
-          transforma el futuro con nosotros.
-        </p>
-        <div className="flex gap-4">
-          <Link href="/request-info" className={buttonClasses("primary")}>
-            Contáctanos
-          </Link>
-          <a
-            href="https://docs.google.com/forms/d/e/1FAIpQLSdRNGNM10IHgnvAnfOl75xvsgVm1hqwepqN-uqEy4ZjFOiQEg/viewform?usp=send_form"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={buttonClasses("outline")}
-          >
-            Hazte Socio
-          </a>
-        </div>
-        <div className="mt-3 flex flex-wrap justify-center gap-x-8 gap-y-3 sm:gap-x-12">
-          {BENEFICIOS.map((beneficio) => (
-            <div key={beneficio} className="flex items-center gap-2.5">
-              <span className="bg-primary flex h-5 w-5 shrink-0 items-center justify-center rounded-full">
-                <CheckIcon />
-              </span>
-              <span className="text-sm text-white">{beneficio}</span>
+      <section className="bg-cchia-hero relative overflow-hidden pt-[230px] pb-0 max-lg:pt-[160px]">
+        <div className="mx-auto w-full max-w-[1290px] px-5">
+          <div className="grid max-lg:gap-y-10 relative z-10 grid-cols-12 items-center gap-5">
+            <div className="text-white relative col-span-12 mb-[60px] text-center lg:mb-[100px]">
+              <p className="max-lg:mb-4 mb-8 font-medium text-white uppercase">
+                Cámara Chilena de Inteligencia Artificial
+              </p>
+              <h1 className="max-md:mb-8 text-[36px] leading-[1.33] font-bold text-white xl:leading-[1.2] xl:text-[64px]">
+                Impulsando la Inteligencia Artificial <br /> en Chile.
+              </h1>
+              <p className="max-md:mb-8 mx-auto mb-12 max-w-[590px] text-white">
+                Únete a la organización líder en IA de Chile. Conecta, innova y
+                transforma el futuro con nosotros.
+              </p>
+              <div className=" mx-auto mb-10 flex max-md:flex-col items-center justify-center gap-4">
+                <Link href="/request-info" className={buttonClasses("primary")}>
+                  Contáctanos
+                </Link>
+                <a
+                  href={HAZTE_SOCIO_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonClasses("outline")}
+                >
+                  Hazte Socio
+                </a>
+              </div>
+              <ul className="mx-auto mt-5 flex max-w-[815px] max-md:flex-col max-md:gap-5 items-center justify-between">
+                {BENEFICIOS.map((beneficio) => (
+                  <li key={beneficio} className="flex items-center gap-3.5">
+                    <CheckIcon />
+                    <p className="text-white">{beneficio}</p>
+                  </li>
+                ))}
+              </ul>
             </div>
-          ))}
+          </div>
         </div>
       </section>
 
-      <section className="flex flex-col items-center gap-8 px-4 py-14 sm:gap-10 sm:px-8 sm:py-20 lg:px-16">
-        <h2 className="text-ink text-center text-[32px] font-extrabold lg:text-[38px]">
-          Últimos artículos
-        </h2>
-        <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {articulos.map((articulo) => (
-            <ArticleCard key={articulo.id} articulo={articulo} />
-          ))}
+      <section className="bg-white">
+        <div className="mx-auto flex w-full max-w-[1290px] flex-col items-center gap-8 px-5 py-20 sm:gap-10 sm:py-24">
+          <h2 className="text-ink text-center text-[32px] leading-[1.33] font-bold xl:text-[36px]">
+            Últimos artículos
+          </h2>
+          <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {articulos.map((articulo) => (
+              <ArticleCard key={articulo.id} articulo={articulo} />
+            ))}
+          </div>
         </div>
       </section>
     </>

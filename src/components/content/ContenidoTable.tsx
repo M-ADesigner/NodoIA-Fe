@@ -18,38 +18,38 @@ export function ContenidoTable({
 
   return (
     <>
-      <div className="border-border overflow-hidden rounded-xl border">
+      <div className="border-border shadow-nav overflow-hidden rounded-medium border bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
-              <tr className="border-border text-ink/45 border-b text-xs font-bold tracking-wide uppercase">
-                <th className="px-5 py-3.5 text-left">Artículo</th>
-                <th className="px-5 py-3.5 text-left">Estado</th>
-                <th className="px-5 py-3.5 text-left">Actualizado</th>
-                <th className="px-5 py-3.5"></th>
+              <tr className="border-border text-ink/45 border-b text-xs font-bold tracking-widest uppercase">
+                <th className="px-6 py-4 text-left">Artículo</th>
+                <th className="px-6 py-4 text-left">Estado</th>
+                <th className="px-6 py-4 text-left">Actualizado</th>
+                <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody>
               {articulos.map((articulo) => (
                 <tr
                   key={articulo.id}
-                  className="border-b border-[#ECEFE6] last:border-0"
+                  className="border-b border-[#ECEFE6] last:border-0 hover:bg-[#F7FAF0]"
                 >
-                  <td className="px-5 py-4">
+                  <td className="px-6 py-4">
                     <p className="text-ink font-semibold">{articulo.titulo}</p>
                     <p className="text-ink/50 text-xs">{articulo.categoria}</p>
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-6 py-4">
                     <EstadoBadge estado={articulo.estado} />
                   </td>
-                  <td className="text-ink/60 px-5 py-4">
+                  <td className="text-ink/60 px-6 py-4">
                     {articulo.actualizadoEn}
                   </td>
-                  <td className="px-5 py-4">
+                  <td className="px-6 py-4">
                     <button
                       type="button"
                       onClick={() => setSeleccionado(articulo)}
-                      className="text-navy-700 font-semibold"
+                      className="text-navy-700 font-semibold hover:underline"
                     >
                       {articulo.estado === "publicado" ? "Ver" : "Editar"}
                     </button>
