@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/Button";
 import { ArticleCard } from "@/components/content/ArticleCard";
-import { articulosPublicados } from "@/lib/content/mock-articulos";
+import { articulosPublicados } from "@/lib/db/queries";
+
+export const dynamic = "force-dynamic";
 
 const HAZTE_SOCIO_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLSdRNGNM10IHgnvAnfOl75xvsgVm1hqwepqN-uqEy4ZjFOiQEg/viewform?usp=send_form";
@@ -30,8 +32,8 @@ function CheckIcon() {
   );
 }
 
-export default function Home() {
-  const articulos = articulosPublicados();
+export default async function Home() {
+  const articulos = await articulosPublicados();
 
   return (
     <>

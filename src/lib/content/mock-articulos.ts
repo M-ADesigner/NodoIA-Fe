@@ -1,9 +1,11 @@
 import type { Articulo } from "@/types/content";
 
+type ArticuloMock = Omit<Articulo, "slug">;
+
 // Datos de ejemplo — CCHIA todavía no tiene una fuente real de contenido
 // conectada (ver Guion_Entrevista_Cliente_CCHIA, sección "Contenido y
 // publicación"). Reemplazar por la fuente real cuando exista.
-export const articulosMock: Articulo[] = [
+export const articulosMock: ArticuloMock[] = [
   {
     id: "a1",
     titulo: "IA en la minería: cinco proyectos chilenos a seguir",
@@ -83,14 +85,14 @@ export const articulosMock: Articulo[] = [
   },
 ];
 
-export function articulosPublicados(): Articulo[] {
+export function articulosPublicados(): ArticuloMock[] {
   return articulosMock.filter((articulo) => articulo.estado === "publicado");
 }
 
-export function articulosEnRevision(): Articulo[] {
+export function articulosEnRevision(): ArticuloMock[] {
   return articulosMock.filter((articulo) => articulo.estado === "en_revision");
 }
 
-export function articuloPorSlug(slug: string): Articulo | undefined {
+export function articuloPorSlug(slug: string): ArticuloMock | undefined {
   return articulosMock.find((articulo) => articulo.id === slug);
 }

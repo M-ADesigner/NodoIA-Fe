@@ -14,7 +14,7 @@ export function ArticleCard({ articulo }: { articulo: Articulo }) {
       <div className="text-ink/45 mt-2 flex justify-between text-xs">
         <span>{articulo.publicadoEn}</span>
         <Link
-          href={`/articulos/${articulo.id}`}
+          href={`/articulos/${articulo.slug}`}
           className="text-navy-700 font-semibold"
         >
           Leer más →

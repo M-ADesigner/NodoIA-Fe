@@ -1,11 +1,15 @@
 import { RevisionList } from "@/components/content/RevisionList";
-import { articulosEnRevision } from "@/lib/content/mock-articulos";
-import { usuariosMock } from "@/lib/auth/mock-usuarios";
+import { articulosEnRevision, listarUsuarios } from "@/lib/db/queries";
 
-export default function RevisionPage() {
-  const pendientes = articulosEnRevision();
+export const dynamic = "force-dynamic";
+
+export default async function RevisionPage() {
+  const [pendientes, usuarios] = await Promise.all([
+    articulosEnRevision(),
+    listarUsuarios(),
+  ]);
   const usuariosPorId = Object.fromEntries(
-    usuariosMock.map((usuario) => [usuario.id, usuario]),
+    usuarios.map((usuario) => [usuario.id, usuario]),
   );
 
   return (

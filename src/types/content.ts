@@ -6,6 +6,7 @@ export type CategoriaContenido =
 
 export interface Articulo {
   id: string;
+  slug: string;
   titulo: string;
   categoria: CategoriaContenido;
   resumen: string;

@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
-import { articuloPorSlug } from "@/lib/content/mock-articulos";
+import { articuloPublicadoPorSlug } from "@/lib/db/queries";
+
+export const dynamic = "force-dynamic";
 
 export default async function ArticuloPage(
   props: PageProps<"/articulos/[slug]">,
 ) {
   const { slug } = await props.params;
-  const articulo = articuloPorSlug(slug);
+  const articulo = await articuloPublicadoPorSlug(slug);
 
   if (!articulo) {
     notFound();

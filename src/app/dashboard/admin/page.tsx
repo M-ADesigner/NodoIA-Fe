@@ -1,20 +1,28 @@
 import { UsersTable } from "@/components/content/UsersTable";
-import {
-  articulosEnRevision,
-  articulosMock,
-  articulosPublicados,
-} from "@/lib/content/mock-articulos";
-import { usuariosMock } from "@/lib/auth/mock-usuarios";
+import { listarArticulos, listarUsuarios } from "@/lib/db/queries";
 
-export default function AdminPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminPage() {
+  const [articulos, usuarios] = await Promise.all([
+    listarArticulos(),
+    listarUsuarios(),
+  ]);
+
   const stats = [
-    { label: "Artículos publicados", valor: articulosPublicados().length },
-    { label: "En cola de revisión", valor: articulosEnRevision().length },
-    { label: "Usuarios activos", valor: usuariosMock.length },
+    {
+      label: "Artículos publicados",
+      valor: articulos.filter((a) => a.estado === "publicado").length,
+    },
+    {
+      label: "En cola de revisión",
+      valor: articulos.filter((a) => a.estado === "en_revision").length,
+    },
+    { label: "Usuarios activos", valor: usuarios.length },
   ];
 
   const articulosPorUsuario: Record<string, number> = {};
-  for (const articulo of articulosMock) {
+  for (const articulo of articulos) {
     articulosPorUsuario[articulo.autorId] =
       (articulosPorUsuario[articulo.autorId] ?? 0) + 1;
   }
@@ -55,7 +63,7 @@ export default function AdminPage() {
           Usuarios
         </h2>
         <UsersTable
-          usuarios={usuariosMock}
+          usuarios={usuarios}
           articulosPorUsuario={articulosPorUsuario}
         />
       </section>

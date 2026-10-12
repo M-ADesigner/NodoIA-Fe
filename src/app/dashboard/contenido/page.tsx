@@ -1,11 +1,16 @@
 import { Button } from "@/components/ui/Button";
 import { ContenidoTable } from "@/components/content/ContenidoTable";
-import { articulosMock } from "@/lib/content/mock-articulos";
-import { usuariosMock } from "@/lib/auth/mock-usuarios";
+import { listarArticulos, listarUsuarios } from "@/lib/db/queries";
 
-export default function ContenidoPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ContenidoPage() {
+  const [articulos, usuarios] = await Promise.all([
+    listarArticulos(),
+    listarUsuarios(),
+  ]);
   const usuariosPorId = Object.fromEntries(
-    usuariosMock.map((usuario) => [usuario.id, usuario]),
+    usuarios.map((usuario) => [usuario.id, usuario]),
   );
 
   return (
@@ -40,7 +45,7 @@ export default function ContenidoPage() {
         <h2 className="font-heading text-ink text-xl font-bold sm:text-2xl">
           Artículos
         </h2>
-        <ContenidoTable articulos={articulosMock} usuariosPorId={usuariosPorId} />
+        <ContenidoTable articulos={articulos} usuariosPorId={usuariosPorId} />
       </section>
     </div>
   );

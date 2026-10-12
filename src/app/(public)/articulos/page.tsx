@@ -1,8 +1,10 @@
 import { ArticleCard } from "@/components/content/ArticleCard";
-import { articulosPublicados } from "@/lib/content/mock-articulos";
+import { articulosPublicados } from "@/lib/db/queries";
 
-export default function ArticulosPage() {
-  const articulos = articulosPublicados();
+export const dynamic = "force-dynamic";
+
+export default async function ArticulosPage() {
+  const articulos = await articulosPublicados();
 
   return (
     <main className="flex flex-col gap-8 px-5 pt-[160px] pb-20 max-sm:pt-[140px]">

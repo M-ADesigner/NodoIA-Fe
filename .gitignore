@@ -48,3 +48,4 @@ CLAUDE.md
 AGENTS.md
 skills-lock.json
 .agents/
+!.env.example
