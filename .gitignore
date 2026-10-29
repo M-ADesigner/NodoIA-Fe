@@ -49,5 +49,4 @@ AGENTS.md
 skills-lock.json
 .agents/
 !.env.example
-drizzle/*
 informe/*
