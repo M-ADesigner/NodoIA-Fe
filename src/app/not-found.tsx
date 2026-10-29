@@ -24,7 +24,7 @@ export default function NotFound() {
       <p className="text-sm font-medium tracking-widest text-white/80 uppercase">
         Error 404
       </p>
-      <h1 className="text-[32px] leading-[1.2] font-bold !text-white xl:text-[44px]">
+      <h1 className="text-[32px] leading-[1.2] font-bold text-white! xl:text-[44px]">
         No encontramos esta página
       </h1>
       <p className="max-w-[480px] text-white/85">

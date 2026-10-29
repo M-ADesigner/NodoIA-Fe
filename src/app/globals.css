@@ -18,6 +18,17 @@
   --color-surface: #f6f8f2;
   --color-lime-soft: #eaf6c9;
   --color-lime-ink: #3f5210;
+  --color-primary-ink: #10210a;
+  --color-navy-50: #e1e8f2;
+
+  /* Neutros y estados usados en tablas, etiquetas y filas. */
+  --color-neutral-soft: #ecefe6;
+  --color-neutral-ink: #74766d;
+  --color-row-hover: #f7faf0;
+  --color-success-soft: #e4f1e6;
+  --color-success-ink: #3f7d4b;
+  --color-sand-soft: #f1ece3;
+  --color-sand-ink: #5a4630;
 
   /* Botones: gradiente oscuro con texto blanco; el lima es solo acento. */
   --color-btn-start: #1e293b;
@@ -57,6 +68,15 @@
   --color-surface: var(--color-surface);
   --color-lime-soft: var(--color-lime-soft);
   --color-lime-ink: var(--color-lime-ink);
+  --color-primary-ink: var(--color-primary-ink);
+  --color-navy-50: var(--color-navy-50);
+  --color-neutral-soft: var(--color-neutral-soft);
+  --color-neutral-ink: var(--color-neutral-ink);
+  --color-row-hover: var(--color-row-hover);
+  --color-success-soft: var(--color-success-soft);
+  --color-success-ink: var(--color-success-ink);
+  --color-sand-soft: var(--color-sand-soft);
+  --color-sand-ink: var(--color-sand-ink);
   --color-btn-start: var(--color-btn-start);
   --color-btn-end: var(--color-btn-end);
   --color-border-btn: var(--color-border-btn);

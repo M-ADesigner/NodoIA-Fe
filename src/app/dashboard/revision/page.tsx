@@ -24,7 +24,7 @@ export default async function RevisionPage() {
           <h1 className="font-heading text-ink text-3xl font-bold sm:text-4xl">
             Cola de revisión
           </h1>
-          <span className="bg-primary/20 rounded-full px-3 py-1 text-sm font-bold text-[#4A5F0E]">
+          <span className="bg-primary/20 text-lime-ink rounded-full px-3 py-1 text-sm font-bold">
             {pendientes.length} pendientes
           </span>
         </div>

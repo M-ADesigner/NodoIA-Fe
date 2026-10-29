@@ -7,6 +7,7 @@ import { articulosPublicados } from "@/lib/db/queries";
 import { JsonLd, organizacionLd, sitioWebLd } from "@/lib/seo/json-ld";
 import { construirMetadata } from "@/lib/seo/metadata";
 import {
+  HAZTE_SOCIO_URL,
   rutaArticulo,
   SITE_DESCRIPTION,
   SITE_LEGAL_NAME,
@@ -25,9 +26,6 @@ export const metadata: Metadata = {
   // La home usa el título completo, sin el sufijo " | CCHIA".
   title: { absolute: `${SITE_NAME} | ${SITE_LEGAL_NAME}` },
 };
-
-const HAZTE_SOCIO_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSdRNGNM10IHgnvAnfOl75xvsgVm1hqwepqN-uqEy4ZjFOiQEg/viewform?usp=send_form";
 
 const BENEFICIOS = [
   {
@@ -88,7 +86,7 @@ export default async function Home() {
             <span className="bg-primary/15 text-lime-soft inline-flex rounded-full px-4 py-2 text-[13px] font-semibold tracking-[0.08em] uppercase">
               Cámara Chilena de Inteligencia Artificial
             </span>
-            <h1 className="mt-6 text-[38px] leading-[1.06] font-extrabold tracking-[-0.025em] !text-white sm:text-[52px] xl:text-[64px]">
+            <h1 className="mt-6 text-[38px] leading-[1.06] font-extrabold tracking-[-0.025em] text-white! sm:text-[52px] xl:text-[64px]">
               Impulsando la Inteligencia Artificial en Chile.
             </h1>
             <p className="mt-6 max-w-[540px] text-[19px] leading-relaxed text-white/85">
@@ -154,14 +152,14 @@ export default async function Home() {
                 key={beneficio.titulo}
                 className="border-border bg-surface rounded-medium flex flex-col gap-4 border p-8"
               >
-                <span className="bg-navy-900 inline-flex h-[52px] w-[52px] items-center justify-center rounded-2xl">
+                <span className="bg-navy-900 text-primary inline-flex h-[52px] w-[52px] items-center justify-center rounded-2xl">
                   <svg
                     aria-hidden="true"
                     width="26"
                     height="26"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#b1e346"
+                    stroke="currentColor"
                     strokeWidth="1.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -214,7 +212,7 @@ export default async function Home() {
         <div className="mx-auto w-full max-w-[1200px] px-6 pb-20 sm:pb-24">
           <div className="bg-cchia-blue flex flex-wrap items-center justify-between gap-8 rounded-[32px] px-8 py-12 sm:px-12 sm:py-14">
             <div className="max-w-[640px] min-w-0 flex-[1_1_380px]">
-              <h2 className="text-[26px] leading-[1.15] font-extrabold !text-white sm:text-[38px]">
+              <h2 className="text-[26px] leading-[1.15] font-extrabold text-white! sm:text-[38px]">
                 Únete a la organización líder en IA de Chile
               </h2>
               <p className="mt-4 text-[17px] leading-relaxed text-white/85">

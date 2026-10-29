@@ -9,12 +9,9 @@ import {
 } from "@/lib/db/queries";
 import { articuloLd, JsonLd, migasDePanLd } from "@/lib/seo/json-ld";
 import { construirMetadata } from "@/lib/seo/metadata";
-import { rutaArticulo, SITE_LEGAL_NAME } from "@/lib/seo/site";
+import { HAZTE_SOCIO_URL, rutaArticulo, SITE_LEGAL_NAME } from "@/lib/seo/site";
 
 export const dynamic = "force-dynamic";
-
-const HAZTE_SOCIO_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSdRNGNM10IHgnvAnfOl75xvsgVm1hqwepqN-uqEy4ZjFOiQEg/viewform?usp=send_form";
 
 export async function generateMetadata(
   props: PageProps<"/articulos/[slug]">,
@@ -128,7 +125,7 @@ export default async function ArticuloPage(
 
           <aside className="flex max-w-[340px] min-w-0 flex-[1_1_280px] flex-col gap-5">
             <div className="bg-cchia-blue rounded-medium p-7 text-white">
-              <h2 className="text-xl leading-tight font-bold !text-white">
+              <h2 className="text-xl leading-tight font-bold text-white!">
                 Sé parte de la cámara
               </h2>
               <p className="mt-3 text-[15px] leading-relaxed text-white/85">

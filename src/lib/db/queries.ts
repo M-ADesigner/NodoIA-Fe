@@ -117,7 +117,9 @@ export async function articulosRelacionados(
   const filas = await db
     .select()
     .from(articulos)
-    .where(and(eq(articulos.estado, "publicado"), ne(articulos.slug, slugActual)))
+    .where(
+      and(eq(articulos.estado, "publicado"), ne(articulos.slug, slugActual)),
+    )
     .orderBy(desc(articulos.publicadoEn))
     .limit(cantidad);
   return filas.map(aArticulo);

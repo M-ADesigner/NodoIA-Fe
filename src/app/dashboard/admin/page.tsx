@@ -37,7 +37,7 @@ export default async function AdminPage() {
       label: "Usuarios activos",
       valor: usuarios.filter((u) => u.activo).length,
       icono: ICONOS.usuarios,
-      tono: "bg-[#e1e8f2] text-navy-900",
+      tono: "bg-navy-50 text-navy-900",
     },
   ];
 

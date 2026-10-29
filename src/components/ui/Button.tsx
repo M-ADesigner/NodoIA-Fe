@@ -14,7 +14,7 @@ const variants: Record<Variant, string> = {
     "bg-gradient-to-b from-btn-start to-btn-end border border-slate-600/30 text-white shadow-btn",
   outline:
     "border-[1.5px] border-border-btn bg-white text-navy-900 hover:border-navy-700",
-  accent: "bg-primary text-[#10210a] font-bold hover:brightness-95",
+  accent: "bg-primary text-primary-ink font-bold hover:brightness-95",
   ghost: "border-[1.5px] border-white/55 text-white hover:bg-white/10",
 };
 

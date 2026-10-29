@@ -1,16 +1,22 @@
 import type { EstadoContenido } from "@/types/content";
 
 const ESTADOS: Record<EstadoContenido, { label: string; className: string }> = {
-  borrador: { label: "Borrador", className: "bg-[#ECEFE6] text-[#74766D]" },
+  borrador: {
+    label: "Borrador",
+    className: "bg-neutral-soft text-neutral-ink",
+  },
   asistido_ia: {
     label: "Asistido por IA",
-    className: "bg-primary/20 text-[#4A5F0E]",
+    className: "bg-primary/20 text-lime-ink",
   },
   en_revision: {
     label: "En revisión",
     className: "bg-navy-700/12 text-navy-700",
   },
-  aprobado: { label: "Aprobado", className: "bg-[#E4F1E6] text-[#3F7D4B]" },
+  aprobado: {
+    label: "Aprobado",
+    className: "bg-success-soft text-success-ink",
+  },
   publicado: {
     label: "Publicado",
     className: "bg-navy-900/10 text-navy-900",

@@ -1,10 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/Button";
-import { SITE_LEGAL_NAME } from "@/lib/seo/site";
-
-const HAZTE_SOCIO_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLSdRNGNM10IHgnvAnfOl75xvsgVm1hqwepqN-uqEy4ZjFOiQEg/viewform?usp=send_form";
+import { HAZTE_SOCIO_URL, SITE_LEGAL_NAME } from "@/lib/seo/site";
 
 const NAV = [
   { href: "/", label: "Inicio" },

@@ -80,7 +80,7 @@ export default async function ArticulosPage(props: {
                     className={
                       chip.activo
                         ? "bg-navy-900 border-navy-900 inline-flex min-h-11 items-center rounded-full border-[1.5px] px-5 text-[15px] font-semibold text-white"
-                        : "text-navy-900 hover:border-navy-700 inline-flex min-h-11 items-center rounded-full border-[1.5px] border-[#cfd8c6] bg-white px-5 text-[15px] font-semibold"
+                        : "text-navy-900 hover:border-navy-700 border-border-btn inline-flex min-h-11 items-center rounded-full border-[1.5px] bg-white px-5 text-[15px] font-semibold"
                     }
                   >
                     {chip.label}

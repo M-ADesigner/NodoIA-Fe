@@ -4,7 +4,7 @@ import type { Articulo, CategoriaContenido } from "@/types/content";
 
 // Colores de la etiqueta por categoría (alineados con el sistema de marca).
 const CATEGORIA_CLASS: Record<CategoriaContenido, string> = {
-  Artículo: "bg-[#f1ece3] text-[#5a4630]",
+  Artículo: "bg-sand-soft text-sand-ink",
   Boletín: "bg-navy-100 text-navy-900",
   "Noticia institucional": "bg-lime-soft text-lime-ink",
 };

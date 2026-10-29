@@ -18,7 +18,7 @@ export function ContenidoTable({
 
   return (
     <>
-      <div className="border-border shadow-nav overflow-hidden rounded-medium border bg-white">
+      <div className="border-border shadow-nav rounded-medium overflow-hidden border bg-white">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
@@ -33,7 +33,7 @@ export function ContenidoTable({
               {articulos.map((articulo) => (
                 <tr
                   key={articulo.id}
-                  className="border-b border-[#ECEFE6] last:border-0 hover:bg-[#F7FAF0]"
+                  className="border-neutral-soft hover:bg-row-hover border-b last:border-0"
                 >
                   <td className="px-6 py-4">
                     <p className="text-ink font-semibold">{articulo.titulo}</p>

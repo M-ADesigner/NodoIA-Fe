@@ -8,6 +8,10 @@ export const SITE_LOCALE = "es_CL";
 export const SITE_LANG = "es-CL";
 export const THEME_COLOR = "#1a365d";
 
+/** Formulario de inscripción de socios (Google Forms de la CCHIA). */
+export const HAZTE_SOCIO_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLSdRNGNM10IHgnvAnfOl75xvsgVm1hqwepqN-uqEy4ZjFOiQEg/viewform?usp=send_form";
+
 export const LOGO_PATH = "/images/Logo_CCHIA.png";
 export const LOGO_SIZE = { width: 512, height: 212 };
 

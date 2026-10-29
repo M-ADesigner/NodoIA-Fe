@@ -7,7 +7,7 @@ import { iniciarSesion, type LoginState } from "./actions";
 const inicial: LoginState = {};
 
 const INPUT_CLASS =
-  "min-h-[50px] rounded-[14px] border-[1.5px] border-[#cfd8c6] bg-white px-4 text-base text-ink outline-none focus:border-navy-700 focus:ring-4 focus:ring-navy-700/20";
+  "min-h-[50px] rounded-[14px] border-[1.5px] border-border-btn bg-white px-4 text-base text-ink outline-none focus:border-navy-700 focus:ring-4 focus:ring-navy-700/20";
 
 export function LoginForm({ next }: { next: string }) {
   const [estado, accion, pendiente] = useActionState(iniciarSesion, inicial);

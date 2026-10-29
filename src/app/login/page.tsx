@@ -54,7 +54,7 @@ export default async function LoginPage(props: {
           <p className="text-lime-soft text-[13px] font-bold tracking-[0.12em] uppercase">
             Panel interno
           </p>
-          <h1 className="mt-4 text-[30px] leading-[1.12] font-extrabold !text-white sm:text-[40px]">
+          <h1 className="mt-4 text-[30px] leading-[1.12] font-extrabold text-white! sm:text-[40px]">
             Gestiona el contenido de la cámara en un solo lugar.
           </h1>
           <p className="mt-4 text-[17px] leading-relaxed text-white/85">

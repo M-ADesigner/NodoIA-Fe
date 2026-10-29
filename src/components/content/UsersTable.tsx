@@ -217,7 +217,7 @@ export function UsersTable({
               {usuarios.map((usuario) => (
                 <tr
                   key={usuario.id}
-                  className="border-b border-[#ECEFE6] last:border-0 hover:bg-[#F7FAF0]"
+                  className="border-neutral-soft hover:bg-row-hover border-b last:border-0"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -248,8 +248,8 @@ export function UsersTable({
                     <span
                       className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
                         usuario.activo
-                          ? "bg-[#E4F1E6] text-[#3F7D4B]"
-                          : "bg-[#ECEFE6] text-[#74766D]"
+                          ? "bg-success-soft text-success-ink"
+                          : "bg-neutral-soft text-neutral-ink"
                       }`}
                     >
                       {usuario.activo ? "Activo" : "Inactivo"}

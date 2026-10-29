@@ -30,7 +30,7 @@ export function RevisionList({
           return (
             <div
               key={articulo.id}
-              className="border-border shadow-nav flex flex-col items-start gap-4 rounded-medium border bg-white px-6 py-5 transition-shadow hover:shadow-box sm:flex-row sm:items-center sm:justify-between"
+              className="border-border shadow-nav rounded-medium hover:shadow-box flex flex-col items-start gap-4 border bg-white px-6 py-5 transition-shadow sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <div className="flex flex-wrap items-center gap-2.5">

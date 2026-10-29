@@ -26,19 +26,25 @@ export default async function ContenidoPage() {
             Mi contenido
           </h1>
         </div>
-        <Button>+ Nuevo artículo con IA</Button>
+        <Button
+          disabled
+          title="Disponible cuando se configure el asistente de IA"
+        >
+          + Nuevo artículo con IA
+        </Button>
       </div>
 
       <div className="border-primary/30 bg-primary/10 rounded-medium shadow-nav flex flex-col items-start gap-4 border border-dashed px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="mb-1 text-xs font-bold tracking-widest text-[#5C7A12] uppercase">
-            Sugerencia del asistente
+          <p className="text-lime-ink mb-1 text-xs font-bold tracking-widest uppercase">
+            Asistente de IA
           </p>
           <p className="text-ink text-base">
-            Resumir el boletín de minería en 150 palabras para redes sociales.
+            Aún no está configurado: el proveedor y las tareas se definen con la
+            CCHIA. Aquí aparecerán las sugerencias de redacción y resumen.
           </p>
         </div>
-        <Button variant="outline" className="shrink-0">
+        <Button variant="outline" className="shrink-0" disabled>
           Generar
         </Button>
       </div>
