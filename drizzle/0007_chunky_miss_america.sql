@@ -19,3 +19,5 @@ CREATE TABLE "fuentes" (
 ALTER TABLE "articulo_fuentes" ADD CONSTRAINT "articulo_fuentes_articulo_id_articulos_id_fk" FOREIGN KEY ("articulo_id") REFERENCES "public"."articulos"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "articulo_fuentes" ADD CONSTRAINT "articulo_fuentes_fuente_id_fuentes_id_fk" FOREIGN KEY ("fuente_id") REFERENCES "public"."fuentes"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "fuentes" ADD CONSTRAINT "fuentes_creado_por_usuarios_id_fk" FOREIGN KEY ("creado_por") REFERENCES "public"."usuarios"("id") ON DELETE set null ON UPDATE no action;
+
+
