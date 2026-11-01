@@ -19,3 +19,24 @@ export interface Articulo {
   actualizadoEnIso?: string;
   publicadoEnIso?: string;
 }
+
+export interface Revision {
+  id: string;
+  articuloId: string;
+  usuarioNombre: string;
+  estadoAnterior: EstadoContenido;
+  estadoNuevo: EstadoContenido;
+  comentario?: string;
+  creadoEn: string;
+}
+
+export type TipoFuente =
+  "Informe" | "Noticia" | "Estudio" | "Sitio oficial" | "Otro";
+
+export interface Fuente {
+  id: string;
+  titulo: string;
+  url: string;
+  tipo: TipoFuente;
+  organismo?: string;
+}

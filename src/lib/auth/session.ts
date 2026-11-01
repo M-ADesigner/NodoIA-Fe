@@ -9,18 +9,20 @@ import {
   verificarToken,
 } from "@/lib/auth/jwt";
 import { tienePermiso, vistasPermitidas, type Permiso } from "@/lib/auth/roles";
-import { usuarioActivoPorId } from "@/lib/db/queries";
+import { usuarioActivoConVersion } from "@/lib/db/queries";
 import type { Rol, Usuario } from "@/types/user";
 
 export async function crearSesion(usuario: {
   id: string;
   rol: Rol;
   nombre: string;
+  sesionVersion: number;
 }) {
   const token = await firmarToken({
     sub: usuario.id,
     rol: usuario.rol,
     nombre: usuario.nombre,
+    ver: usuario.sesionVersion,
   });
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {
@@ -38,13 +40,15 @@ export async function cerrarSesionCookie() {
 }
 
 // Usuario autenticado y vigente. El JWT es stateless, así que se vuelve a
-// consultar la BD para detectar usuarios desactivados o con rol cambiado.
+// consultar la BD para detectar usuarios desactivados, con rol cambiado o con
+// la sesión revocada (cierre de sesión o cambio de contraseña).
 export const usuarioActual = cache(async (): Promise<Usuario | null> => {
   const store = await cookies();
   const claims = await verificarToken(store.get(SESSION_COOKIE)?.value);
   if (!claims) return null;
-  const usuario = await usuarioActivoPorId(claims.sub);
-  return usuario && usuario.activo ? usuario : null;
+  const fila = await usuarioActivoConVersion(claims.sub);
+  if (!fila || !fila.usuario.activo) return null;
+  return fila.sesionVersion === claims.ver ? fila.usuario : null;
 });
 
 // Guard para páginas y Server Actions del panel. Redirige si no hay sesión o

@@ -21,6 +21,7 @@ export default async function LoginPage(props: {
   const searchParams = await props.searchParams;
   const next = typeof searchParams.next === "string" ? searchParams.next : "";
   const sinPermiso = searchParams.error === "sin-permiso";
+  const restablecida = searchParams.restablecida === "1";
 
   const usuario = await usuarioActual();
   if (usuario) {
@@ -72,6 +73,15 @@ export default async function LoginPage(props: {
           <p className="mt-2 text-[15px] leading-normal text-slate-600">
             Usa la cuenta que te entregó el administrador.
           </p>
+
+          {restablecida && (
+            <p
+              role="status"
+              className="mt-5 rounded-xl bg-green-50 px-3.5 py-3 text-sm leading-snug text-green-900"
+            >
+              Contraseña actualizada. Ya puedes ingresar con la nueva.
+            </p>
+          )}
 
           {sinPermiso && (
             <p

@@ -9,6 +9,8 @@ export interface SesionClaims {
   sub: string;
   rol: Rol;
   nombre: string;
+  /** Versión de sesión del usuario al emitir el token. */
+  ver: number;
 }
 
 function getSecret(): Uint8Array {
@@ -20,7 +22,11 @@ function getSecret(): Uint8Array {
 }
 
 export async function firmarToken(claims: SesionClaims): Promise<string> {
-  return new SignJWT({ rol: claims.rol, nombre: claims.nombre })
+  return new SignJWT({
+    rol: claims.rol,
+    nombre: claims.nombre,
+    ver: claims.ver,
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(claims.sub)
     .setIssuedAt()
@@ -36,11 +42,19 @@ export async function verificarToken(
     const { payload } = await jwtVerify(token, getSecret(), {
       algorithms: ["HS256"],
     });
-    if (!payload.sub || !esRol(payload.rol)) return null;
+    // Sin `ver` (token anterior a la revocación): se exige iniciar sesión de nuevo.
+    if (
+      !payload.sub ||
+      !esRol(payload.rol) ||
+      typeof payload.ver !== "number"
+    ) {
+      return null;
+    }
     return {
       sub: payload.sub,
       rol: payload.rol,
       nombre: typeof payload.nombre === "string" ? payload.nombre : "",
+      ver: payload.ver,
     };
   } catch {
     return null;

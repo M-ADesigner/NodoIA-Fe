@@ -23,6 +23,10 @@ const ESTADOS: Record<EstadoContenido, { label: string; className: string }> = {
   },
 };
 
+export function etiquetaEstado(estado: EstadoContenido) {
+  return ESTADOS[estado].label;
+}
+
 export function EstadoBadge({ estado }: { estado: EstadoContenido }) {
   const { label, className } = ESTADOS[estado];
   return (

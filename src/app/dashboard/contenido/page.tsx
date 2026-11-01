@@ -1,15 +1,28 @@
 import { Button } from "@/components/ui/Button";
 import { ContenidoTable } from "@/components/content/ContenidoTable";
 import { requerirPermiso } from "@/lib/auth/session";
-import { listarArticulos, listarUsuarios } from "@/lib/db/queries";
+import {
+  fuentesDeArticulos,
+  historialDeArticulos,
+  listarArticulos,
+  listarFuentes,
+  listarUsuarios,
+} from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function ContenidoPage() {
-  await requerirPermiso("gestionar_contenido");
+  const actual = await requerirPermiso("gestionar_contenido");
+  // El autor ve solo lo suyo; el administrador, todo el contenido.
   const [articulos, usuarios] = await Promise.all([
-    listarArticulos(),
+    listarArticulos(actual.rol === "administrador" ? undefined : actual.id),
     listarUsuarios(),
+  ]);
+  const ids = articulos.map((a) => a.id);
+  const [historial, fuentes, catalogo] = await Promise.all([
+    historialDeArticulos(ids),
+    fuentesDeArticulos(ids),
+    listarFuentes(),
   ]);
   const usuariosPorId = Object.fromEntries(
     usuarios.map((usuario) => [usuario.id, usuario]),
@@ -26,12 +39,6 @@ export default async function ContenidoPage() {
             Mi contenido
           </h1>
         </div>
-        <Button
-          disabled
-          title="Disponible cuando se configure el asistente de IA"
-        >
-          + Nuevo artículo con IA
-        </Button>
       </div>
 
       <div className="border-primary/30 bg-primary/10 rounded-medium shadow-nav flex flex-col items-start gap-4 border border-dashed px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
@@ -53,7 +60,14 @@ export default async function ContenidoPage() {
         <h2 className="font-heading text-ink text-xl font-bold sm:text-2xl">
           Artículos
         </h2>
-        <ContenidoTable articulos={articulos} usuariosPorId={usuariosPorId} />
+        <ContenidoTable
+          articulos={articulos}
+          usuariosPorId={usuariosPorId}
+          historial={historial}
+          fuentes={fuentes}
+          catalogo={catalogo}
+          puedeEliminar={actual.rol === "administrador"}
+        />
       </section>
     </div>
   );

@@ -1,6 +1,11 @@
 import { RevisionList } from "@/components/content/RevisionList";
 import { requerirPermiso } from "@/lib/auth/session";
-import { articulosEnRevision, listarUsuarios } from "@/lib/db/queries";
+import {
+  articulosEnRevision,
+  fuentesDeArticulos,
+  historialDeArticulos,
+  listarUsuarios,
+} from "@/lib/db/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +14,11 @@ export default async function RevisionPage() {
   const [pendientes, usuarios] = await Promise.all([
     articulosEnRevision(),
     listarUsuarios(),
+  ]);
+  const ids = pendientes.map((a) => a.id);
+  const [historial, fuentes] = await Promise.all([
+    historialDeArticulos(ids),
+    fuentesDeArticulos(ids),
   ]);
   const usuariosPorId = Object.fromEntries(
     usuarios.map((usuario) => [usuario.id, usuario]),
@@ -30,7 +40,12 @@ export default async function RevisionPage() {
         </div>
       </div>
 
-      <RevisionList pendientes={pendientes} usuariosPorId={usuariosPorId} />
+      <RevisionList
+        pendientes={pendientes}
+        usuariosPorId={usuariosPorId}
+        historial={historial}
+        fuentes={fuentes}
+      />
     </div>
   );
 }

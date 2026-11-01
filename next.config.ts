@@ -32,6 +32,8 @@ const nextConfig: NextConfig = {
       // Refuerzo del noindex de las metaetiquetas: panel, login y endpoints.
       { source: "/dashboard/:path*", headers: [NO_INDEXAR] },
       { source: "/login", headers: [NO_INDEXAR] },
+      { source: "/recuperar", headers: [NO_INDEXAR] },
+      { source: "/restablecer", headers: [NO_INDEXAR] },
       { source: "/api/:path*", headers: [NO_INDEXAR] },
       {
         source: "/icons/:path*",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { iniciarSesion, type LoginState } from "./actions";
 
@@ -28,17 +29,25 @@ export function LoginForm({ next }: { next: string }) {
         />
       </label>
 
-      <label className="text-navy-800 flex flex-col gap-2 text-sm font-semibold">
-        Contraseña
-        <input
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="Tu contraseña"
-          required
-          className={INPUT_CLASS}
-        />
-      </label>
+      <div className="flex flex-col gap-2">
+        <label className="text-navy-800 flex flex-col gap-2 text-sm font-semibold">
+          Contraseña
+          <input
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="Tu contraseña"
+            required
+            className={INPUT_CLASS}
+          />
+        </label>
+        <Link
+          href="/recuperar"
+          className="text-navy-700 self-end text-sm font-semibold hover:underline"
+        >
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </div>
 
       {estado.error && (
         <p

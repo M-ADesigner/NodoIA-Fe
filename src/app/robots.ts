@@ -11,7 +11,13 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
         // Panel interno, login y endpoints: no tienen valor para buscadores.
-        disallow: ["/dashboard", "/login", "/api/"],
+        disallow: [
+          "/dashboard",
+          "/login",
+          "/recuperar",
+          "/restablecer",
+          "/api/",
+        ],
       },
     ],
     sitemap: absoluteUrl("/sitemap.xml"),

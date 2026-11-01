@@ -3,8 +3,19 @@
 import { redirect } from "next/navigation";
 import { verifyPassword } from "@/lib/auth/password";
 import { vistasPermitidas } from "@/lib/auth/roles";
-import { cerrarSesionCookie, crearSesion } from "@/lib/auth/session";
-import { credencialesPorCorreo, registrarAcceso } from "@/lib/db/queries";
+import {
+  cerrarSesionCookie,
+  crearSesion,
+  usuarioActual,
+} from "@/lib/auth/session";
+import {
+  credencialesPorCorreo,
+  intentosFallidosDesde,
+  invalidarSesiones,
+  limpiarIntentosFallidos,
+  registrarAcceso,
+  registrarIntentoFallido,
+} from "@/lib/db/queries";
 
 export type LoginState = { error?: string };
 
@@ -14,30 +25,19 @@ const ERROR_GENERICO = "Correo o contraseña incorrectos.";
 const HASH_RELLENO =
   "scrypt$00000000000000000000000000000000$" + "0".repeat(128);
 
-// Límite básico por correo (en memoria: se reinicia con cada despliegue y no
-// se comparte entre instancias; es una defensa mínima, no un WAF).
+// Límite por correo, guardado en la base de datos: sobrevive a reinicios y
+// despliegues y se comparte entre instancias. No es un WAF: no frena ataques
+// distribuidos ni contra muchos correos distintos.
 const INTENTOS_MAX = 5;
 const VENTANA_MS = 10 * 60 * 1000;
-const intentos = new Map<string, { n: number; hasta: number }>();
 
-function bloqueado(clave: string) {
-  const registro = intentos.get(clave);
-  if (!registro) return false;
-  if (registro.hasta < Date.now()) {
-    intentos.delete(clave);
-    return false;
-  }
-  return registro.n >= INTENTOS_MAX;
+async function bloqueado(clave: string) {
+  const desde = new Date(Date.now() - VENTANA_MS);
+  return (await intentosFallidosDesde(clave, desde)) >= INTENTOS_MAX;
 }
 
-function registrarFallo(clave: string) {
-  const ahora = Date.now();
-  const registro = intentos.get(clave);
-  if (!registro || registro.hasta < ahora) {
-    intentos.set(clave, { n: 1, hasta: ahora + VENTANA_MS });
-  } else {
-    registro.n += 1;
-  }
+async function registrarFallo(clave: string) {
+  await registrarIntentoFallido(clave, new Date(Date.now() - VENTANA_MS));
 }
 
 function destinoSeguro(next: FormDataEntryValue | null): string | null {
@@ -59,7 +59,7 @@ export async function iniciarSesion(
   if (!correo || !password) {
     return { error: "Ingresa tu correo y contraseña." };
   }
-  if (bloqueado(correo)) {
+  if (await bloqueado(correo)) {
     return { error: "Demasiados intentos. Espera unos minutos." };
   }
 
@@ -70,7 +70,7 @@ export async function iniciarSesion(
   );
 
   if (!credenciales || !valido) {
-    registrarFallo(correo);
+    await registrarFallo(correo);
     return { error: ERROR_GENERICO };
   }
 
@@ -83,8 +83,11 @@ export async function iniciarSesion(
     };
   }
 
-  intentos.delete(correo);
-  await crearSesion(credenciales.usuario);
+  await limpiarIntentosFallidos(correo);
+  await crearSesion({
+    ...credenciales.usuario,
+    sesionVersion: credenciales.sesionVersion,
+  });
   await registrarAcceso(credenciales.usuario.id);
 
   const permitidas = vistasPermitidas(credenciales.usuario.rol);
@@ -95,6 +98,9 @@ export async function iniciarSesion(
 }
 
 export async function cerrarSesion() {
+  // Además de borrar la cookie, invalida el token por si alguien lo copió.
+  const actual = await usuarioActual();
+  if (actual) await invalidarSesiones(actual.id);
   await cerrarSesionCookie();
   redirect("/login");
 }
