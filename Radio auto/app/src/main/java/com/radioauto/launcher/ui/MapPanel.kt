@@ -34,6 +34,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,7 +71,11 @@ fun MapPanel(
     overlay: @Composable () -> Unit = {},
 ) {
     val context = LocalContext.current
-    val tracking by TrackingState.state.collectAsState()
+    // Only what the map needs, so GPS speed or odometer changes do not redraw it.
+    val position by remember { TrackingState.state.map { it.lat to it.lon }.distinctUntilChanged() }
+        .collectAsState(initial = null to null)
+    val heading by remember { TrackingState.state.map { ((it.bearing ?: 0f) / 5).toInt() * 5f }.distinctUntilChanged() }
+        .collectAsState(initial = 0f)
     val owner = LocalLifecycleOwner.current
 
     val map = remember {
@@ -122,8 +128,7 @@ fun MapPanel(
                 factory = { map },
                 modifier = Modifier.fillMaxSize(),
                 update = { view ->
-                    val lat = tracking.lat
-                    val lon = tracking.lon
+                    val (lat, lon) = position
                     if (lat != null && lon != null) view.controller.animateTo(GeoPoint(lat, lon))
                 },
             )
@@ -131,7 +136,7 @@ fun MapPanel(
             // The car stays in the middle; only the arrow turns.
             Icon(
                 Icons.Default.Navigation, "Mi posición",
-                Modifier.align(Alignment.Center).size(34.dp).rotate(tracking.bearing ?: 0f),
+                Modifier.align(Alignment.Center).size(34.dp).rotate(heading),
                 Hud.Accent,
             )
         } else {

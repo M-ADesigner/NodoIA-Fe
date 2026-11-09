@@ -98,8 +98,6 @@ fun changeBrightness(context: Context, delta: Int) {
     Settings.System.putInt(context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, (current + delta).coerceIn(10, 255))
 }
 
-private val OnArt = TextStyle(fontWeight = FontWeight.Medium, shadow = Shadow(Color.Black, Offset(0f, 2f), 10f))
-
 /** Bottom bar: transport controls, cover, then a colourful spectrum with the track name over it, and volume. */
 @Composable
 fun MediaBar(onOpenBluetooth: () -> Unit, onApps: () -> Unit, onVoice: () -> Unit, onObd: () -> Unit, modifier: Modifier = Modifier) {
@@ -229,38 +227,5 @@ private fun Progress(fraction: Float, color: Color, modifier: Modifier = Modifie
             size = Size(size.width * fraction.coerceIn(0f, 1f), size.height),
             cornerRadius = CornerRadius(size.height),
         )
-    }
-}
-
-/**
- * Decorative rainbow spectrum. It cannot hear the audio (that needs the microphone permission); the bars follow
- * a loop. It steps 20 times a second instead of 60, which looks the same and is easy on weak head-unit GPUs.
- */
-@Composable
-private fun Spectrum(modifier: Modifier = Modifier) {
-    val phase = remember { mutableFloatStateOf(0f) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(50)
-            phase.floatValue = (phase.floatValue + 0.3f) % (2 * PI).toFloat()
-        }
-    }
-    val bars = 56
-    val colors = remember { List(bars) { Color.hsv(it * 300f / bars, 0.85f, 1f) } }
-    Canvas(modifier) {
-        val gap = 2.dp.toPx()
-        val w = (size.width - gap * (bars - 1)) / bars
-        val p = phase.floatValue // read here, so only this draw is redone each step, not the screen
-        for (i in 0 until bars) {
-            val level = 0.12f + 0.88f * abs(sin(p * (1 + i % 3) + i * 0.45f))
-            val h = size.height * 0.5f * level
-            drawRoundRect(
-                colors[i],
-                topLeft = Offset(i * (w + gap), size.height - h),
-                size = Size(w, h),
-                cornerRadius = CornerRadius(w / 2),
-                alpha = 0.6f,
-            )
-        }
     }
 }

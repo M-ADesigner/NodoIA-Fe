@@ -56,6 +56,8 @@ import com.radioauto.launcher.data.Prefs
 import com.radioauto.launcher.link.LinkServer
 import com.radioauto.launcher.data.MAP_PACKAGES
 import com.radioauto.launcher.data.defaultDock
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 @Composable
@@ -76,13 +78,12 @@ fun HomeScreen(
 
     val byPackage = apps.associateBy { it.packageName }
     val dockPackages = settings.dock ?: defaultDock(apps)
-    // Driving mode: above 10 km/h video and web shortcuts are hidden (still reachable in "Todas las apps").
-    val tracking by com.radioauto.launcher.data.TrackingState.state.collectAsState()
-    val moving = (tracking.kmh ?: 0) > 10
+    // Driving mode: above 10 km/h video and web shortcuts are hidden from "Todas las apps". Only the flip is observed,
+    // so the screen is not rebuilt on every GPS fix.
+    val moving by remember {
+        com.radioauto.launcher.data.TrackingState.state.map { (it.kmh ?: 0) > 10 }.distinctUntilChanged()
+    }.collectAsState(initial = false)
     val distracting = setOf("com.google.android.youtube", "com.android.chrome")
-    val dockApps = dockPackages.mapNotNull { byPackage[it] }.filter { !moving || it.packageName !in distracting }
-    // Favourites first (map, radio, music...), then everything else in alphabetical order.
-    val listApps = dockApps + apps.filter { it.packageName !in dockPackages }
 
     fun toggleDock(app: AppInfo) {
         val next = if (app.packageName in dockPackages) dockPackages - app.packageName

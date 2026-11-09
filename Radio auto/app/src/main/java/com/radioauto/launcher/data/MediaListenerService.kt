@@ -79,19 +79,11 @@ class MediaListenerService : NotificationListenerService() {
 
     override fun onListenerConnected() {
         MediaState.attach(this)
-        refreshNav()
     }
 
     override fun onListenerDisconnected() {
         MediaState.detach()
-        NavState.update(this, null)
     }
-
-    override fun onNotificationPosted(sbn: android.service.notification.StatusBarNotification?) = refreshNav()
-
-    override fun onNotificationRemoved(sbn: android.service.notification.StatusBarNotification?) = refreshNav()
-
-    private fun refreshNav() = NavState.update(this, runCatching { activeNotifications }.getOrNull())
 }
 
 object MediaState {
