@@ -87,9 +87,7 @@ class NavShortcuts(
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun TopBar(
-    nav: NavShortcuts,
     onOpenSettings: () -> Unit,
-    onOpenApps: () -> Unit,
     onCamera: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -110,35 +108,40 @@ fun TopBar(
         }
     }
 
-    val tint = MaterialTheme.colorScheme.primary
+    var clock by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        val fmt = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+        while (true) {
+            val now = System.currentTimeMillis()
+            clock = fmt.format(java.util.Date(now))
+            delay(60_000 - now % 60_000)
+        }
+    }
     Row(
-        modifier.fillMaxWidth().height(64.dp).padding(horizontal = 16.dp),
+        modifier.fillMaxWidth().height(46.dp).padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             weather?.let {
-                Icon(it.kind.icon(), null, Modifier.size(32.dp), it.kind.color())
-                Text("${it.tempC}°", fontSize = 30.sp)
+                Icon(it.kind.icon(), null, Modifier.size(24.dp), it.kind.color())
+                Text("${it.tempC}°", fontSize = 22.sp)
             }
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            CircleButton(Icons.Default.Settings, "Ajustes del launcher", onOpenSettings)
-            Box(Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)))
-            IconButton(onCamera, Modifier.size(48.dp)) { Icon(Icons.Default.CameraAlt, "Cámara", Modifier.size(28.dp)) }
-        }
+        Text(clock, fontSize = 32.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraLight)
 
         Row(
             Modifier.weight(1f),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.End),
         ) {
-            Text(compassPoint(tracking.bearing), fontSize = 26.sp)
+            Text(compassPoint(tracking.bearing), fontSize = 17.sp)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Icon(Icons.Default.SatelliteAlt, null, Modifier.size(24.dp))
-                Text(tracking.satellites?.toString() ?: "--", fontSize = 20.sp)
+                Icon(Icons.Default.SatelliteAlt, null, Modifier.size(18.dp))
+                Text(tracking.satellites?.toString() ?: "--", fontSize = 15.sp)
             }
-            CircleButton(Icons.Default.GridView, "Todas las apps", onOpenApps, tint = tint)
+            IconButton(onCamera, Modifier.size(38.dp)) { Icon(Icons.Default.CameraAlt, "Cámara", Modifier.size(22.dp)) }
+            CircleButton(Icons.Default.Settings, "Ajustes del launcher", onOpenSettings)
         }
     }
 }
@@ -147,12 +150,12 @@ fun TopBar(
 private fun CircleButton(icon: ImageVector, description: String, onClick: () -> Unit, tint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
     Box(
         Modifier
-            .size(48.dp)
+            .size(38.dp)
             .clip(CircleShape)
             .border(1.5.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
-    ) { Icon(icon, description, Modifier.size(26.dp), tint) }
+    ) { Icon(icon, description, Modifier.size(20.dp), tint) }
 }
 
 /** One pin icon, like the reference; tapping it lists Casa and Trabajo, each with a pencil to set the address. */

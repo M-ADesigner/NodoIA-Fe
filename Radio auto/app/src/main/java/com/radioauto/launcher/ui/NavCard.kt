@@ -1,5 +1,6 @@
 package com.radioauto.launcher.ui
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,18 +32,18 @@ fun NavCard(onOpen: (packageName: String) -> Unit, modifier: Modifier = Modifier
     val info = nav ?: return
     Row(
         modifier
-            .glass(RoundedCornerShape(20.dp), strength = 0.5f)
+            .hudPanel(14.dp, Color(0xE6000000))
             .clickable { onOpen(info.packageName) }
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(Icons.Default.Navigation, "Navegando", Modifier.size(48.dp), MaterialTheme.colorScheme.primary)
+        Icon(Icons.Default.Navigation, "Navegando", Modifier.size(32.dp), Hud.Accent)
         Column(Modifier.weight(1f)) {
-            Text(info.title.ifEmpty { info.text }, fontSize = 24.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(info.title.ifEmpty { info.text }, fontSize = 18.sp, lineHeight = 21.sp, fontWeight = FontWeight.SemiBold, maxLines = 2, overflow = TextOverflow.Ellipsis)
             val detail = listOf(info.text.takeIf { info.title.isNotEmpty() }, info.subText.takeIf { it.isNotEmpty() })
                 .filterNotNull().joinToString(" · ")
-            if (detail.isNotEmpty()) Text(detail, fontSize = 17.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (detail.isNotEmpty()) Text(detail, fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

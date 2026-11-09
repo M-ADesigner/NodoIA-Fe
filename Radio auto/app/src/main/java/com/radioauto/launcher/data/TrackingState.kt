@@ -14,7 +14,16 @@ data class Tracking(
     /** Direction of travel in degrees, kept from the last time the car was moving. */
     val bearing: Float? = null,
     val satellites: Int? = null,
-)
+    // Trip numbers from the GPS, so they exist without an OBD adapter. They live for the session.
+    val tripMaxKmh: Int = 0,
+    val tripSpeedSum: Long = 0,
+    val tripSamples: Int = 0,
+    val tripStartMs: Long = 0,
+    val lastFixMs: Long = 0,
+) {
+    val avgKmh: Int get() = if (tripSamples > 0) (tripSpeedSum / tripSamples).toInt() else 0
+    val tripSeconds: Int get() = if (tripStartMs > 0) ((lastFixMs - tripStartMs) / 1000).toInt() else 0
+}
 
 /** Live speed, position and distances, written by [TrackingService] and shown by the home screen. */
 object TrackingState {
@@ -31,7 +40,10 @@ object TrackingState {
         loaded = true
     }
 
-    fun onFix(kmh: Int?, addedMeters: Double, lat: Double, lon: Double, bearing: Float?, satellites: Int?) =
+    fun onFix(
+        kmh: Int?, addedMeters: Double, lat: Double, lon: Double, bearing: Float?, satellites: Int?,
+        nowMs: Long = System.currentTimeMillis(),
+    ) =
         _state.update {
             it.copy(
                 kmh = kmh,
@@ -41,6 +53,11 @@ object TrackingState {
                 lon = lon,
                 bearing = bearing ?: it.bearing,
                 satellites = satellites ?: it.satellites,
+                tripMaxKmh = maxOf(it.tripMaxKmh, kmh ?: 0),
+                tripSpeedSum = it.tripSpeedSum + (kmh ?: 0),
+                tripSamples = it.tripSamples + 1,
+                tripStartMs = if (it.tripStartMs == 0L) nowMs else it.tripStartMs,
+                lastFixMs = nowMs,
             )
         }
 
@@ -48,5 +65,7 @@ object TrackingState {
 
     fun setTotalKm(km: Double) = _state.update { it.copy(totalMeters = km * 1000) }
 
-    fun resetTrip() = _state.update { it.copy(tripMeters = 0.0) }
+    fun resetTrip() = _state.update {
+        it.copy(tripMeters = 0.0, tripMaxKmh = 0, tripSpeedSum = 0, tripSamples = 0, tripStartMs = 0, lastFixMs = 0)
+    }
 }

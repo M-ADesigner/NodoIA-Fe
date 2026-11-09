@@ -44,6 +44,11 @@ class SettingsActions(
     val onKeepLauncher: (Boolean) -> Unit,
     val onSpeedAlert: (Boolean) -> Unit,
     val onSpeedLimit: (Int) -> Unit,
+    val onObdConnection: (com.radioauto.launcher.data.ObdConnection) -> Unit,
+    val onObdAddress: (String, Int) -> Unit,
+    val onNextOilKm: (Int) -> Unit,
+    val onObdBtAddress: (String) -> Unit,
+    val onObdInterval: (Int) -> Unit,
     val onBrightness: (Int) -> Unit,
     val onVolume: (Int) -> Unit,
     val onWifi: () -> Unit,
@@ -53,9 +58,32 @@ class SettingsActions(
 @Composable
 fun SettingsDialog(settings: LauncherSettings, apps: List<AppInfo>, actions: SettingsActions, onDismiss: () -> Unit) {
     var pickingBtApp by remember { mutableStateOf(false) }
+    var showDiagnostic by remember { mutableStateOf(false) }
+    var pickingObdBt by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    if (showDiagnostic) MusicDiagnosticDialog { showDiagnostic = false }
 
     if (pickingBtApp) {
         BtAppPicker(apps, onPick = { actions.onBtMusicApp(it); pickingBtApp = false }, onDismiss = { pickingBtApp = false })
+    }
+
+    if (pickingObdBt) {
+        val paired = remember { com.radioauto.launcher.data.pairedBluetoothDevices(context) }
+        AlertDialog(
+            onDismissRequest = { pickingObdBt = false },
+            confirmButton = { TextButton(onClick = { pickingObdBt = false }) { Text("Cancelar") } },
+            title = { Text("Adaptador Bluetooth OBD") },
+            text = {
+                LazyColumn {
+                    item { PickerRow("Automático", "Busca uno llamado OBD, ELM, V-Link, Vgate...", null) { actions.onObdBtAddress(""); pickingObdBt = false } }
+                    if (paired.isEmpty()) item { Text("No hay dispositivos emparejados (o falta el permiso de Bluetooth).", Modifier.padding(vertical = 8.dp)) }
+                    items(paired, key = { it.address }) { d ->
+                        PickerRow(d.name, d.address, null) { actions.onObdBtAddress(d.address); pickingObdBt = false }
+                    }
+                }
+            },
+        )
     }
 
     AlertDialog(
@@ -116,6 +144,55 @@ fun SettingsDialog(settings: LauncherSettings, apps: List<AppInfo>, actions: Set
                         Text(apps.firstOrNull { it.packageName == settings.btMusicApp }?.label ?: "Automático")
                     }
                 }
+
+                Text("Conexión OBD2 (datos del auto)")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    com.radioauto.launcher.data.ObdConnection.entries.forEach {
+                        FilterChip(settings.obdConnection == it, { actions.onObdConnection(it) }, { Text(it.label) })
+                    }
+                }
+                if (settings.obdConnection == com.radioauto.launcher.data.ObdConnection.WIFI || settings.obdConnection == com.radioauto.launcher.data.ObdConnection.AUTO) {
+                    var address by remember(settings.obdHost, settings.obdPort) { mutableStateOf("${settings.obdHost}:${settings.obdPort}") }
+                    androidx.compose.material3.OutlinedTextField(
+                        value = address,
+                        onValueChange = {
+                            address = it
+                            val host = it.substringBefore(':').trim()
+                            val port = it.substringAfter(':', "35000").trim().toIntOrNull()
+                            if (host.isNotEmpty() && port != null) actions.onObdAddress(host, port)
+                        },
+                        label = { Text("IP:puerto del adaptador") },
+                        singleLine = true,
+                    )
+                }
+
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("Adaptador Bluetooth", Modifier.weight(1f))
+                    FilledTonalButton({ pickingObdBt = true }) {
+                        Text(if (settings.obdBtAddress.isBlank()) "Automático" else settings.obdBtAddress)
+                    }
+                }
+                Text("Velocidad de lectura")
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(300 to "Rápida", 500 to "Normal", 1000 to "Suave").forEach { (ms, label) ->
+                        FilterChip(settings.obdIntervalMs == ms, { actions.onObdInterval(ms) }, { Text(label) })
+                    }
+                }
+
+                Text("Próximo cambio de aceite (km del odómetro)")
+                var oil by remember(settings.nextOilKm) { mutableStateOf(settings.nextOilKm.toString()) }
+                androidx.compose.material3.OutlinedTextField(
+                    value = oil,
+                    onValueChange = { v ->
+                        val digits = v.filter { it.isDigit() }.take(6)
+                        oil = digits
+                        digits.toIntOrNull()?.let(actions.onNextOilKm)
+                    },
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+                )
+
+                FilledTonalButton({ showDiagnostic = true }) { Text("Diagnóstico de música") }
             }
         },
     )

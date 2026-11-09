@@ -51,10 +51,14 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.core:core-ktx:1.19.1")
+    implementation("androidx.media:media:1.7.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.11.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.11.0")
     implementation("androidx.datastore:datastore-preferences:1.1.7")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("org.osmdroid:osmdroid-android:6.1.20")
+    implementation("com.github.mik3y:usb-serial-for-android:3.8.1")
 
 
     testImplementation("junit:junit:4.13.2")

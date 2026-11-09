@@ -39,8 +39,8 @@ fun LauncherTheme(
     val scheme = if (night) {
         darkColorScheme(
             primary = accent,
-            background = Color.Black,
-            surface = Color(0xFF111418),
+            background = Color(0xFF000000),
+            surface = Color(0xFF0A0B0D),
             surfaceVariant = Color(0xFF1C2128),
             onBackground = Color(0xFFE8EEF4),
             onSurface = Color(0xFFE8EEF4),

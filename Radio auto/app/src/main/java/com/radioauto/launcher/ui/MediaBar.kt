@@ -14,11 +14,13 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +28,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Bluetooth
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -62,6 +66,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.radioauto.launcher.data.BluetoothMusic
 import com.radioauto.launcher.data.MediaState
+import com.radioauto.launcher.data.Obd
 import com.radioauto.launcher.link.LinkServer
 import kotlinx.coroutines.delay
 import kotlin.math.PI
@@ -97,7 +102,7 @@ private val OnArt = TextStyle(fontWeight = FontWeight.Medium, shadow = Shadow(Co
 
 /** Bottom bar: transport controls, cover, then a colourful spectrum with the track name over it, and volume. */
 @Composable
-fun MediaBar(onOpenBluetooth: () -> Unit, modifier: Modifier = Modifier) {
+fun MediaBar(onOpenBluetooth: () -> Unit, onApps: () -> Unit, onVoice: () -> Unit, onObd: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val music by MediaState.state.collectAsState()
     val link by LinkServer.state.collectAsState()
@@ -107,80 +112,91 @@ fun MediaBar(onOpenBluetooth: () -> Unit, modifier: Modifier = Modifier) {
 
     Row(
         // A darker strip across the whole width, as in the reference, so the controls and title always read.
-        modifier.fillMaxWidth().height(100.dp).background(Color.Black.copy(alpha = 0.6f)).padding(horizontal = 12.dp, vertical = 6.dp),
+        modifier.fillMaxWidth().height(74.dp).hudPanel(18.dp).padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        IconButton({ BluetoothMusic.previous(context) }, Modifier.size(64.dp)) { Icon(Icons.Default.SkipPrevious, "Anterior", Modifier.size(42.dp)) }
-        IconButton(
-            { BluetoothMusic.playPause(context) },
-            Modifier.size(70.dp).border(2.dp, c.onSurface, CircleShape),
-        ) {
-            Icon(if (music.isPlaying || linkTrack?.playing == true) Icons.Default.Pause else Icons.Default.PlayArrow, "Reproducir o pausar", Modifier.size(42.dp))
+        // Transport on the left, big and bare, like the reference.
+        IconButton({ BluetoothMusic.previous(context) }, Modifier.size(48.dp)) { Icon(Icons.Default.SkipPrevious, "Anterior", Modifier.size(32.dp)) }
+        IconButton({ BluetoothMusic.playPause(context) }, Modifier.size(56.dp).border(1.5.dp, Hud.Accent, CircleShape)) {
+            Icon(
+                if (music.isPlaying || linkTrack?.playing == true) Icons.Default.Pause else Icons.Default.PlayArrow,
+                "Reproducir o pausar", Modifier.size(42.dp),
+            )
         }
-        IconButton({ BluetoothMusic.next(context) }, Modifier.size(64.dp)) { Icon(Icons.Default.SkipNext, "Siguiente", Modifier.size(42.dp)) }
+        IconButton({ BluetoothMusic.next(context) }, Modifier.size(48.dp)) { Icon(Icons.Default.SkipNext, "Siguiente", Modifier.size(32.dp)) }
 
-        // Rounded square with a pink-to-purple gradient when there is no cover, like the reference.
-        Box(
+        // Dark pill: small cover, title, artist and a thin progress line.
+        Row(
             Modifier
-                .size(76.dp)
-                .clip(RoundedCornerShape(14.dp))
-                .background(Brush.linearGradient(listOf(Color(0xFFFF6FA5), Color(0xFF8E4DFF))))
-                .clickable { onOpenBluetooth() },
-            Alignment.Center,
+                .weight(1f)
+                .fillMaxHeight(0.86f)
+                .hudPanel(12.dp, Hud.Bg)
+                .clickable { onOpenBluetooth() }
+                .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            val art = music.albumArt
-            when {
-                art != null -> Image(remember(art) { art.asImageBitmap() }, null, Modifier.size(76.dp), contentScale = ContentScale.Crop)
-                linkTrack != null -> Icon(Icons.Default.MusicNote, null, Modifier.size(38.dp), Color.White)
-                music.hasMusic -> Icon(Icons.Default.MusicNote, null, Modifier.size(38.dp), Color.White)
-                else -> Icon(Icons.Default.Bluetooth, "Bluetooth", Modifier.size(38.dp), Color.White)
+            Box(
+                Modifier.size(44.dp).clip(RoundedCornerShape(10.dp))
+                    .background(Brush.linearGradient(listOf(Color(0xFF2A2F34), Color(0xFF0E1012)))),
+                Alignment.Center,
+            ) {
+                val art = music.albumArt
+                when {
+                    art != null -> Image(remember(art) { art.asImageBitmap() }, null, Modifier.size(44.dp), contentScale = ContentScale.Crop)
+                    linkTrack != null || music.hasMusic -> Icon(Icons.Default.MusicNote, null, Modifier.size(22.dp), Hud.Accent)
+                    else -> Icon(Icons.Default.Bluetooth, "Bluetooth", Modifier.size(22.dp), Hud.Accent)
+                }
             }
-        }
-
-        Box(Modifier.weight(1f).fillMaxSize().clickable { onOpenBluetooth() }, contentAlignment = Alignment.Center) {
-            // The animation only exists while something plays, so it costs no CPU the rest of the time.
-            if (music.isPlaying) Spectrum(Modifier.fillMaxSize())
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                val muted = Hud.Muted
                 when {
                     linkTrack != null -> {
-                        Text(
-                            linkTrack.title,
-                            fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = OnArt,
-                        )
-                        Text(linkTrack.artist, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt)
+                        Text(linkTrack.title, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(linkTrack.artist, fontSize = 12.sp, color = muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
 
                     music.hasMusic -> {
-                        Text(
-                            music.title.ifEmpty { "Sin título" },
-                            fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = OnArt,
-                        )
-                        Text(music.artist, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt)
+                        Text(music.title.ifEmpty { "Sin título" }, fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(music.artist, fontSize = 12.sp, color = muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (music.durationMs > 0) {
-                            Progress(music.positionMs / music.durationMs.toFloat(), c.primary, Modifier.fillMaxWidth(0.8f).height(3.dp))
+                            Progress(music.positionMs / music.durationMs.toFloat(), c.primary, Modifier.fillMaxWidth().padding(top = 4.dp).height(3.dp))
                         }
                     }
 
                     music.btConnected -> {
-                        Text("Mi celular conectado", fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt)
-                        Text(
-                            "Toca ▶ o reproduce desde el celular",
-                            fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt,
-                        )
+                        Text("Celular conectado", fontSize = 16.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("Toca ▶ para reproducir", fontSize = 12.sp, color = muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
 
-                    else -> Text(
-                        "⚠ Sin Bluetooth: toca para conectar",
-                        color = Color(0xFFFFB74D),
-                        fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = OnArt,
-                    )
+                    else -> {
+                        Text("Sin Bluetooth", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color(0xFFFFB74D), maxLines = 1)
+                        Text("Toca para conectar", fontSize = 12.sp, color = muted, maxLines = 1)
+                    }
                 }
             }
         }
 
-        IconButton({ changeVolume(context, -1) }, Modifier.size(64.dp)) { Icon(Icons.AutoMirrored.Filled.VolumeDown, "Bajar volumen", Modifier.size(38.dp)) }
-        IconButton({ changeVolume(context, 1) }, Modifier.size(64.dp)) { Icon(Icons.AutoMirrored.Filled.VolumeUp, "Subir volumen", Modifier.size(38.dp)) }
+        // The big home button in the middle opens every app.
+        IconButton(onApps, Modifier.size(56.dp).clip(CircleShape).border(1.5.dp, Hud.Accent, CircleShape)) {
+            Icon(Icons.Default.Home, "Todas las apps", Modifier.size(30.dp))
+        }
+
+        // OBD status chip: green when the car answers.
+        val obd by Obd.state.collectAsState()
+        Row(
+            Modifier.hudPanel(50.dp, Hud.Bg).clickable { onObd() }.padding(horizontal = 10.dp, vertical = 7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Box(Modifier.size(8.dp).clip(CircleShape).background(if (obd.connected) Color(0xFF4CAF50) else Hud.Muted))
+            Text(if (obd.connected) "OBD · Conectado" else "OBD · Sin conexión", fontSize = 12.sp, maxLines = 1)
+        }
+
+        IconButton({ changeVolume(context, -1) }, Modifier.size(38.dp)) { Icon(Icons.AutoMirrored.Filled.VolumeDown, "Bajar volumen", Modifier.size(24.dp)) }
+        IconButton({ changeVolume(context, 1) }, Modifier.size(38.dp)) { Icon(Icons.AutoMirrored.Filled.VolumeUp, "Subir volumen", Modifier.size(24.dp)) }
+        IconButton(onVoice, Modifier.size(44.dp).clip(CircleShape).border(1.dp, Hud.Line, CircleShape)) { Icon(Icons.Default.Mic, "Asistente de voz", Modifier.size(24.dp)) }
 
         // Titles and the player state come from the media sessions, which the system only shows to enabled listeners.
         if (!hasAccess) {
@@ -196,6 +212,11 @@ fun MediaBar(onOpenBluetooth: () -> Unit, modifier: Modifier = Modifier) {
             ) { Text("Dar acceso a notificaciones", fontSize = 12.sp, maxLines = 2, textAlign = TextAlign.Center) }
         }
     }
+}
+
+private fun clock(ms: Long): String {
+    val total = (ms / 1000).coerceAtLeast(0)
+    return "%d:%02d".format(total / 60, total % 60)
 }
 
 /** Thin track with the played part in the accent colour. */

@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,6 +54,7 @@ import com.radioauto.launcher.data.MediaState
 import com.radioauto.launcher.data.Navigator
 import com.radioauto.launcher.data.Prefs
 import com.radioauto.launcher.link.LinkServer
+import com.radioauto.launcher.data.MAP_PACKAGES
 import com.radioauto.launcher.data.defaultDock
 import kotlinx.coroutines.launch
 
@@ -67,6 +70,8 @@ fun HomeScreen(
     var showSettings by remember { mutableStateOf(false) }
     var showApps by remember { mutableStateOf(false) }
     var showBtQr by remember { mutableStateOf(false) }
+    var showObdHelp by remember { mutableStateOf(false) }
+    var showObdFull by remember { mutableStateOf(false) }
     var editingAddress by remember { mutableStateOf<Boolean?>(null) } // true = Casa, false = Trabajo
 
     val byPackage = apps.associateBy { it.packageName }
@@ -103,103 +108,55 @@ fun HomeScreen(
     // The session of the chosen Bluetooth app wins over any other player.
     LaunchedEffect(settings.btMusicApp) { MediaState.setPreferred(settings.btMusicApp) }
 
-    val primary = MaterialTheme.colorScheme.primary
     val background = MaterialTheme.colorScheme.background
-
-    Box(
-        Modifier
-            .fillMaxSize()
-            // Drawn once per size/colour change, not per frame: two soft glows, seen when no cover is available.
-            .drawWithCache {
-                val w = size.width
-                val h = size.height
-                val aurora = Brush.linearGradient(
-                    listOf(Color(0xFF3A1D4E), Color(0xFF5A2A5A), Color(0xFF6B3550)), Offset(0f, 0f), Offset(w, h),
-                )
-                val glowA = Brush.radialGradient(listOf(Color(0xFFFF8FB1).copy(alpha = 0.40f), Color.Transparent), Offset(w * 0.12f, h * 0.15f), w * 0.5f)
-                val glowB = Brush.radialGradient(listOf(Color(0xFFB39DDB).copy(alpha = 0.38f), Color.Transparent), Offset(w * 0.95f, h * 0.9f), w * 0.55f)
-                val glowC = Brush.radialGradient(listOf(Color(0xFFFFAB80).copy(alpha = 0.32f), Color.Transparent), Offset(w * 0.55f, h * 0.05f), w * 0.4f)
-                onDrawBehind {
-                    drawRect(background)
-                    drawRect(aurora)
-                    drawRect(glowA)
-                    drawRect(glowB)
-                    drawRect(glowC)
-                }
-            }
-    ) {
-        ArtBackground(Modifier.fillMaxSize())
-
-        // Shade so text reads over any cover: darker toward the app list, the top bar and the bottom bar.
-        Box(
-            Modifier.fillMaxSize().drawWithCache {
-                val side = Brush.horizontalGradient(
-                    listOf(Color.Transparent, background.copy(alpha = 0.25f)), size.width * 0.35f, size.width * 0.7f,
-                )
-                val top = Brush.verticalGradient(listOf(background.copy(alpha = 0.35f), Color.Transparent), 0f, size.height * 0.2f)
-                val bottom = Brush.verticalGradient(
-                    listOf(Color.Transparent, background.copy(alpha = 0.6f)), size.height * 0.75f, size.height,
-                )
-                onDrawBehind {
-                    drawRect(side)
-                    drawRect(top)
-                    drawRect(bottom)
-                }
-            }
+    // The OBD adapter over Bluetooth needs the nearby-devices permission on Android 12+; asked when the driver picks it.
+    val btPermission = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission(),
+    ) { }
+    LaunchedEffect(settings.obdConnection, settings.obdHost, settings.obdPort, settings.obdBtAddress, settings.obdIntervalMs) {
+        com.radioauto.launcher.data.Obd.configure(
+            context, settings.obdConnection, settings.obdHost, settings.obdPort, settings.obdBtAddress, settings.obdIntervalMs,
         )
+    }
 
-        Column(Modifier.fillMaxSize().statusBarsPadding()) {
-            TopBar(
-                nav = NavShortcuts(onGo = ::goTo, onEdit = { editingAddress = it }),
-                onOpenSettings = { showSettings = true },
-                onOpenApps = { showApps = true },
-                onCamera = { launchIntent(Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)) },
-            )
+    fun openMapApp() {
+        MAP_PACKAGES.firstOrNull { it in byPackage }?.let { repository.launch(it) }
+    }
 
-            // Left: time and speed. Right: navigation, the three things done most (home, work, voice), then favourites.
-            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-                val w = maxWidth
-                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Column(
-                        Modifier.width(w * 0.30f).fillMaxHeight(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                    ) {
-                        ClockDial(diameter = minOf(w * 0.28f, 210.dp), modifier = Modifier)
-                        SpeedCard(
-                            limit = if (settings.speedAlert) settings.speedLimit else null,
-                            modifier = Modifier.fillMaxWidth(0.8f),
-                        )
-                    }
-
-                    Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        NavCard(onOpen = { repository.launch(it) }, modifier = Modifier.fillMaxWidth())
-
-                        Row(Modifier.fillMaxWidth().weight(0.8f), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            ActionTile(Icons.Default.Home, "Casa", { goTo(true) }, Modifier.weight(1f).fillMaxHeight(), hue = 15f, onLongClick = { editingAddress = true })
-                            ActionTile(Icons.Default.Work, "Trabajo", { goTo(false) }, Modifier.weight(1f).fillMaxHeight(), hue = 330f, onLongClick = { editingAddress = false })
-                            ActionTile(Icons.Default.Mic, "Asistente", ::voiceAssistant, Modifier.weight(1f).fillMaxHeight(), hue = 270f)
+    Box(Modifier.fillMaxSize().background(background)) {
+        Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp)) {
+            // Left: car status. Right: the map with the next turn on top and the usual destinations on the side.
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CarStatusPanel(
+                    limit = if (settings.speedAlert) settings.speedLimit else null,
+                    nextOilKm = settings.nextOilKm,
+                    modifier = Modifier.weight(0.31f).fillMaxHeight(),
+                )
+                MapPanel(
+                    onSearch = ::openMapApp,
+                    onHome = { goTo(true) },
+                    onWork = { goTo(false) },
+                    onSettings = { showSettings = true },
+                    modifier = Modifier.weight(0.69f).fillMaxHeight(),
+                    overlay = {
+                        Column(Modifier.width(340.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ObdAlertBanner(settings.nextOilKm)
                         }
-
-                        // Favourites (long press in the full list to change them) plus the button to everything else.
-                        val tiles: List<AppInfo?> = (dockApps.take(5) + listOf<AppInfo?>(null)).let { it.take(6) }
-                        tiles.chunked(3).forEachIndexed { rowIdx, row ->
-                            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                                row.forEachIndexed { col, app ->
-                                    if (app == null) ActionTile(Icons.Default.GridView, "Todas las apps", { showApps = true }, Modifier.weight(1f).fillMaxHeight(), hue = 200f)
-                                    else AppTile(app, { repository.launch(app.packageName) }, { toggleDock(app) }, Modifier.weight(1f).fillMaxHeight(), hue = listOf(35f, 330f, 270f, 15f, 200f, 300f)[(rowIdx * 3 + col) % 6])
-                                }
-                                repeat(3 - row.size) { Box(Modifier.weight(1f)) }
-                            }
-                        }
-                    }
-                }
+                    },
+                )
             }
 
-            MediaBar(onOpenBluetooth = {
-                // Without a phone linked, offer the QR pairing help; with one, the system screen manages it.
-                if (MediaState.state.value.btConnected || LinkServer.state.value.connected) BluetoothMusic.openSettings(context) else showBtQr = true
-            })
+            Spacer(Modifier.height(6.dp))
+            MediaBar(
+                onOpenBluetooth = {
+                    // Without a phone linked, offer the QR pairing help; with one, the system screen manages it.
+                    if (MediaState.state.value.btConnected || LinkServer.state.value.connected) BluetoothMusic.openSettings(context) else showBtQr = true
+                },
+                onApps = { showApps = true },
+                onVoice = ::voiceAssistant,
+                // Connected: the full readings. Not connected: why, and what to try.
+                onObd = { if (com.radioauto.launcher.data.Obd.state.value.connected) showObdFull = true else showObdHelp = true },
+            )
         }
 
         // Only composed while open, so the full app grid costs nothing on the home screen.
@@ -213,7 +170,7 @@ fun HomeScreen(
                     },
             ) {
                 AppGrid(
-                    apps = apps,
+                    apps = if (moving) apps.filter { it.packageName !in distracting } else apps,
                     onLaunch = {
                         showApps = false
                         repository.launch(it.packageName)
@@ -229,6 +186,19 @@ fun HomeScreen(
     }
 
     if (showBtQr) BluetoothQrDialog { showBtQr = false }
+    if (showObdFull) ObdDialog { showObdFull = false }
+    if (showObdHelp) {
+        ObdHelpDialog(
+            onRetry = { com.radioauto.launcher.data.Obd.retryNow() },
+            onBluetooth = { launchIntent(Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS)) },
+            onWifi = { launchIntent(Intent(android.provider.Settings.ACTION_WIFI_SETTINGS)) },
+            onDemo = {
+                scope.launch { prefs.setObdConnection(com.radioauto.launcher.data.ObdConnection.DEMO) }
+                showObdHelp = false
+            },
+            onDismiss = { showObdHelp = false },
+        )
+    }
     LinkApprovalDialog()
 
     if (showSettings) {
@@ -242,6 +212,16 @@ fun HomeScreen(
                 onKeepLauncher = { scope.launch { prefs.setKeepLauncherOnBluetooth(it) } },
                 onSpeedAlert = { scope.launch { prefs.setSpeedAlert(it) } },
                 onSpeedLimit = { scope.launch { prefs.setSpeedLimit(it) } },
+                onObdConnection = {
+                    scope.launch { prefs.setObdConnection(it) }
+                    if ((it == com.radioauto.launcher.data.ObdConnection.BLUETOOTH || it == com.radioauto.launcher.data.ObdConnection.AUTO) &&
+                        android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S
+                    ) btPermission.launch(android.Manifest.permission.BLUETOOTH_CONNECT)
+                },
+                onObdAddress = { host, port -> scope.launch { prefs.setObdAddress(host, port) } },
+                onNextOilKm = { scope.launch { prefs.setNextOilKm(it) } },
+                onObdBtAddress = { scope.launch { prefs.setObdBtAddress(it) } },
+                onObdInterval = { scope.launch { prefs.setObdInterval(it) } },
                 onBrightness = { changeBrightness(context, it) },
                 onVolume = { changeVolume(context, it) },
                 onWifi = {
