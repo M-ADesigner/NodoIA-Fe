@@ -8,11 +8,13 @@ import android.provider.Settings
 import android.util.Log
 import android.view.KeyEvent
 import android.widget.Toast
+import com.radioauto.launcher.link.LinkServer
+import com.radioauto.launcher.link.MediaAction
 
-/** Opens the head unit's Bluetooth music app and drives the phone's player. */
+/** Drives the phone's player through the Bluetooth media session and opens the Bluetooth settings. */
 object BluetoothMusic {
 
-    /** Bluetooth apps seen on Chinese head units, tried in order when none was chosen in the settings. */
+    /** Bluetooth player apps whose media session counts as the phone's player. */
     val CANDIDATES = listOf(
         "com.ts.bt",
         "com.ts.btmusic",
@@ -28,23 +30,9 @@ object BluetoothMusic {
         "com.android.bluetooth",
     )
 
-    /**
-     * The chosen app first, then the known ones, and finally the system Bluetooth settings so the phone can be paired.
-     * Every failure is reported in a toast with the package that was tried, so a tap is never left without an answer.
-     */
-    fun open(context: Context, preferred: String?) {
-        val pm = context.packageManager
+    /** The system Bluetooth screen, where the phone is paired and the audio profile can be enabled. */
+    fun openSettings(context: Context) {
         val errors = ArrayList<String>()
-        for (pkg in listOfNotNull(preferred) + CANDIDATES) {
-            val launch = pm.getLaunchIntentForPackage(pkg) ?: continue
-            try {
-                context.startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                return
-            } catch (e: Exception) {
-                errors += "$pkg: ${e.message ?: e.javaClass.simpleName}"
-            }
-        }
-
         val settings = listOf(
             Intent(Settings.ACTION_BLUETOOTH_SETTINGS),
             Intent().setComponent(ComponentName("com.android.settings", "com.android.settings.bluetooth.BluetoothSettings")),
@@ -52,7 +40,6 @@ object BluetoothMusic {
         for (intent in settings) {
             try {
                 context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                if (errors.isNotEmpty()) toast(context, "No abrió la app Bluetooth. ${errors.first()}")
                 return
             } catch (e: Exception) {
                 errors += "${intent.action ?: intent.component?.flattenToShortString()}: ${e.message ?: e.javaClass.simpleName}"
@@ -68,23 +55,26 @@ object BluetoothMusic {
 
     fun previous(context: Context) {
         announce("prev")
-        if (!MediaState.skipPrevious()) sendKey(context, KeyEvent.KEYCODE_MEDIA_PREVIOUS)
+        if (!LinkServer.mediaCommand(MediaAction.Previous) && !MediaState.skipPrevious()) sendKey(context, KeyEvent.KEYCODE_MEDIA_PREVIOUS)
     }
 
-    /** With no phone connected there is nothing to play, so the button opens the Bluetooth screen instead. */
+    /** With no phone connected there is nothing to play, so the button opens the Bluetooth settings instead. */
     fun playPause(context: Context) {
         announce("playpause")
+        // A phone linked through the QR / AutoPlay holds the music: its player gets the command.
+        if (LinkServer.mediaCommand(MediaAction.PlayPause)) return
         val now = MediaState.state.value
         if (!now.btConnected && !now.hasMusic) {
-            open(context, MediaState.preferredPackage)
+            openSettings(context)
             return
         }
+        // Play goes to the Bluetooth session: that is what makes the sink take the audio focus. Never sent on its own.
         if (!MediaState.togglePlay()) sendKey(context, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
     }
 
     fun next(context: Context) {
         announce("next")
-        if (!MediaState.skipNext()) sendKey(context, KeyEvent.KEYCODE_MEDIA_NEXT)
+        if (!LinkServer.mediaCommand(MediaAction.Next) && !MediaState.skipNext()) sendKey(context, KeyEvent.KEYCODE_MEDIA_NEXT)
     }
 
     private fun sendKey(context: Context, keyCode: Int) {

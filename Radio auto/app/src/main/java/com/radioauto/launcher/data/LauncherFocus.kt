@@ -44,7 +44,7 @@ object LauncherFocus {
         }
     }
 
-    private fun bringToFront(context: Context) {
+    fun bringToFront(context: Context) {
         val intent = Intent(Intent.ACTION_MAIN)
             .addCategory(Intent.CATEGORY_HOME)
             .setPackage(context.packageName)

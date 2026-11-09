@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import com.radioauto.launcher.data.Prefs
 import com.radioauto.launcher.data.TrackingService
 import com.radioauto.launcher.data.TrackingState
+import com.radioauto.launcher.link.LinkServer
 import kotlinx.coroutines.launch
 import com.radioauto.launcher.ui.HomeScreen
 import com.radioauto.launcher.ui.theme.LauncherTheme
@@ -34,6 +35,7 @@ class MainActivity : ComponentActivity() {
         hideSystemBars()
 
         MediaState.init(applicationContext)
+        LinkServer.start(applicationContext)
 
         val repository = AppRepository(applicationContext)
         val prefs = Prefs(applicationContext)
