@@ -72,7 +72,10 @@ fun ClockDial(diameter: Dp, modifier: Modifier = Modifier) {
             val r = size.minDimension / 2
             // Dark base so the ticks read over the panel behind the dial
             drawCircle(c.background.copy(alpha = 0.9f), radius = r)
-            drawCircle(c.onSurface.copy(alpha = 0.75f), radius = r - 1.5.dp.toPx(), style = Stroke(2.dp.toPx()))
+            drawCircle(
+                Brush.sweepGradient(listOf(Color(0xFFFF8FB1), Color(0xFFFFAB80), Color(0xFFFFE0A3), Color(0xFFB39DDB), Color(0xFFFF8FB1)), center),
+                radius = r - 1.5.dp.toPx(), style = Stroke(3.dp.toPx()),
+            )
             for (i in 0 until TICKS) {
                 val hour = i % (TICKS / 12) == 0
                 val a = Math.toRadians(i * 360.0 / TICKS)

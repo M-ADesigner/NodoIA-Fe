@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.radioauto.launcher.data.BluetoothMusic
 import com.radioauto.launcher.data.MediaState
+import com.radioauto.launcher.link.LinkServer
 import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.abs
@@ -99,38 +100,41 @@ private val OnArt = TextStyle(fontWeight = FontWeight.Medium, shadow = Shadow(Co
 fun MediaBar(onOpenBluetooth: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val music by MediaState.state.collectAsState()
+    val link by LinkServer.state.collectAsState()
+    val linkTrack = link.track
     val c = MaterialTheme.colorScheme
     val hasAccess by MediaState.accessGranted.collectAsState()
 
     Row(
         // A darker strip across the whole width, as in the reference, so the controls and title always read.
-        modifier.fillMaxWidth().height(76.dp).background(Color.Black.copy(alpha = 0.6f)).padding(horizontal = 12.dp, vertical = 6.dp),
+        modifier.fillMaxWidth().height(100.dp).background(Color.Black.copy(alpha = 0.6f)).padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        IconButton({ BluetoothMusic.previous(context) }, Modifier.size(52.dp)) { Icon(Icons.Default.SkipPrevious, "Anterior", Modifier.size(34.dp)) }
+        IconButton({ BluetoothMusic.previous(context) }, Modifier.size(64.dp)) { Icon(Icons.Default.SkipPrevious, "Anterior", Modifier.size(42.dp)) }
         IconButton(
             { BluetoothMusic.playPause(context) },
-            Modifier.size(60.dp).border(2.dp, c.onSurface, CircleShape),
+            Modifier.size(70.dp).border(2.dp, c.onSurface, CircleShape),
         ) {
-            Icon(if (music.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow, "Reproducir o pausar", Modifier.size(36.dp))
+            Icon(if (music.isPlaying || linkTrack?.playing == true) Icons.Default.Pause else Icons.Default.PlayArrow, "Reproducir o pausar", Modifier.size(42.dp))
         }
-        IconButton({ BluetoothMusic.next(context) }, Modifier.size(52.dp)) { Icon(Icons.Default.SkipNext, "Siguiente", Modifier.size(34.dp)) }
+        IconButton({ BluetoothMusic.next(context) }, Modifier.size(64.dp)) { Icon(Icons.Default.SkipNext, "Siguiente", Modifier.size(42.dp)) }
 
         // Rounded square with a pink-to-purple gradient when there is no cover, like the reference.
         Box(
             Modifier
-                .size(50.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .size(76.dp)
+                .clip(RoundedCornerShape(14.dp))
                 .background(Brush.linearGradient(listOf(Color(0xFFFF6FA5), Color(0xFF8E4DFF))))
                 .clickable { onOpenBluetooth() },
             Alignment.Center,
         ) {
             val art = music.albumArt
             when {
-                art != null -> Image(remember(art) { art.asImageBitmap() }, null, Modifier.size(50.dp), contentScale = ContentScale.Crop)
-                music.hasMusic -> Icon(Icons.Default.MusicNote, null, Modifier.size(28.dp), Color.White)
-                else -> Icon(Icons.Default.Bluetooth, "Bluetooth", Modifier.size(28.dp), Color.White)
+                art != null -> Image(remember(art) { art.asImageBitmap() }, null, Modifier.size(76.dp), contentScale = ContentScale.Crop)
+                linkTrack != null -> Icon(Icons.Default.MusicNote, null, Modifier.size(38.dp), Color.White)
+                music.hasMusic -> Icon(Icons.Default.MusicNote, null, Modifier.size(38.dp), Color.White)
+                else -> Icon(Icons.Default.Bluetooth, "Bluetooth", Modifier.size(38.dp), Color.White)
             }
         }
 
@@ -139,12 +143,20 @@ fun MediaBar(onOpenBluetooth: () -> Unit, modifier: Modifier = Modifier) {
             if (music.isPlaying) Spectrum(Modifier.fillMaxSize())
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 when {
+                    linkTrack != null -> {
+                        Text(
+                            linkTrack.title,
+                            fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = OnArt,
+                        )
+                        Text(linkTrack.artist, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt)
+                    }
+
                     music.hasMusic -> {
                         Text(
                             music.title.ifEmpty { "Sin título" },
-                            fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = OnArt,
+                            fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = OnArt,
                         )
-                        Text(music.artist, fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt)
+                        Text(music.artist, fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt)
                         if (music.durationMs > 0) {
                             Progress(music.positionMs / music.durationMs.toFloat(), c.primary, Modifier.fillMaxWidth(0.8f).height(3.dp))
                         }
@@ -154,17 +166,21 @@ fun MediaBar(onOpenBluetooth: () -> Unit, modifier: Modifier = Modifier) {
                         Text("Mi celular conectado", fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt)
                         Text(
                             "Toca ▶ o reproduce desde el celular",
-                            fontSize = 15.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt,
+                            fontSize = 18.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, style = OnArt,
                         )
                     }
 
                     else -> Text(
-                        "Bluetooth: toca para conectar",
-                        fontSize = 20.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = OnArt,
+                        "⚠ Sin Bluetooth: toca para conectar",
+                        color = Color(0xFFFFB74D),
+                        fontSize = 24.sp, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center, style = OnArt,
                     )
                 }
             }
         }
+
+        IconButton({ changeVolume(context, -1) }, Modifier.size(64.dp)) { Icon(Icons.AutoMirrored.Filled.VolumeDown, "Bajar volumen", Modifier.size(38.dp)) }
+        IconButton({ changeVolume(context, 1) }, Modifier.size(64.dp)) { Icon(Icons.AutoMirrored.Filled.VolumeUp, "Subir volumen", Modifier.size(38.dp)) }
 
         // Titles and the player state come from the media sessions, which the system only shows to enabled listeners.
         if (!hasAccess) {

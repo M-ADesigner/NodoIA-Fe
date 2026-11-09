@@ -21,11 +21,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +51,7 @@ import com.radioauto.launcher.data.BluetoothMusic
 import com.radioauto.launcher.data.MediaState
 import com.radioauto.launcher.data.Navigator
 import com.radioauto.launcher.data.Prefs
+import com.radioauto.launcher.link.LinkServer
 import com.radioauto.launcher.data.defaultDock
 import kotlinx.coroutines.launch
 
@@ -61,11 +66,16 @@ fun HomeScreen(
     val context = LocalContext.current
     var showSettings by remember { mutableStateOf(false) }
     var showApps by remember { mutableStateOf(false) }
+    var showBtQr by remember { mutableStateOf(false) }
     var editingAddress by remember { mutableStateOf<Boolean?>(null) } // true = Casa, false = Trabajo
 
     val byPackage = apps.associateBy { it.packageName }
     val dockPackages = settings.dock ?: defaultDock(apps)
-    val dockApps = dockPackages.mapNotNull { byPackage[it] }
+    // Driving mode: above 10 km/h video and web shortcuts are hidden (still reachable in "Todas las apps").
+    val tracking by com.radioauto.launcher.data.TrackingState.state.collectAsState()
+    val moving = (tracking.kmh ?: 0) > 10
+    val distracting = setOf("com.google.android.youtube", "com.android.chrome")
+    val dockApps = dockPackages.mapNotNull { byPackage[it] }.filter { !moving || it.packageName !in distracting }
     // Favourites first (map, radio, music...), then everything else in alphabetical order.
     val listApps = dockApps + apps.filter { it.packageName !in dockPackages }
 
@@ -87,7 +97,7 @@ fun HomeScreen(
 
     fun voiceAssistant() {
         runCatching { context.startActivity(Intent(Intent.ACTION_VOICE_COMMAND).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
-            .onFailure { launchIntent(Intent(Intent.ACTION_ASSIST)) }
+            .onFailure { launchIntent(Intent(android.speech.RecognizerIntent.ACTION_RECOGNIZE_SPEECH)) }
     }
 
     // The session of the chosen Bluetooth app wins over any other player.
@@ -103,16 +113,18 @@ fun HomeScreen(
             .drawWithCache {
                 val w = size.width
                 val h = size.height
-                val glowA = Brush.radialGradient(
-                    listOf(primary.copy(alpha = 0.28f), Color.Transparent), Offset(w * 0.2f, h * 0.2f), w * 0.55f,
+                val aurora = Brush.linearGradient(
+                    listOf(Color(0xFF3A1D4E), Color(0xFF5A2A5A), Color(0xFF6B3550)), Offset(0f, 0f), Offset(w, h),
                 )
-                val glowB = Brush.radialGradient(
-                    listOf(Color(0xFF7C4DFF).copy(alpha = 0.26f), Color.Transparent), Offset(w * 0.5f, h * 0.95f), w * 0.6f,
-                )
+                val glowA = Brush.radialGradient(listOf(Color(0xFFFF8FB1).copy(alpha = 0.40f), Color.Transparent), Offset(w * 0.12f, h * 0.15f), w * 0.5f)
+                val glowB = Brush.radialGradient(listOf(Color(0xFFB39DDB).copy(alpha = 0.38f), Color.Transparent), Offset(w * 0.95f, h * 0.9f), w * 0.55f)
+                val glowC = Brush.radialGradient(listOf(Color(0xFFFFAB80).copy(alpha = 0.32f), Color.Transparent), Offset(w * 0.55f, h * 0.05f), w * 0.4f)
                 onDrawBehind {
                     drawRect(background)
+                    drawRect(aurora)
                     drawRect(glowA)
                     drawRect(glowB)
+                    drawRect(glowC)
                 }
             }
     ) {
@@ -122,11 +134,11 @@ fun HomeScreen(
         Box(
             Modifier.fillMaxSize().drawWithCache {
                 val side = Brush.horizontalGradient(
-                    listOf(Color.Transparent, background.copy(alpha = 0.85f)), size.width * 0.35f, size.width * 0.7f,
+                    listOf(Color.Transparent, background.copy(alpha = 0.25f)), size.width * 0.35f, size.width * 0.7f,
                 )
-                val top = Brush.verticalGradient(listOf(background.copy(alpha = 0.7f), Color.Transparent), 0f, size.height * 0.2f)
+                val top = Brush.verticalGradient(listOf(background.copy(alpha = 0.35f), Color.Transparent), 0f, size.height * 0.2f)
                 val bottom = Brush.verticalGradient(
-                    listOf(Color.Transparent, background.copy(alpha = 0.8f)), size.height * 0.75f, size.height,
+                    listOf(Color.Transparent, background.copy(alpha = 0.6f)), size.height * 0.75f, size.height,
                 )
                 onDrawBehind {
                     drawRect(side)
@@ -144,46 +156,50 @@ fun HomeScreen(
                 onCamera = { launchIntent(Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)) },
             )
 
-            // Same proportions as the reference: the app panel takes the right 60 %, the dial sits over its left
-            // edge, the mic is at the far left, and the speed readout is tucked in the bottom-left corner.
-            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+            // Left: time and speed. Right: navigation, the three things done most (home, work, voice), then favourites.
+            BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
                 val w = maxWidth
-                val h = maxHeight
+                Row(Modifier.fillMaxSize(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(
+                        Modifier.width(w * 0.30f).fillMaxHeight(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        ClockDial(diameter = minOf(w * 0.28f, 210.dp), modifier = Modifier)
+                        SpeedCard(
+                            limit = if (settings.speedAlert) settings.speedLimit else null,
+                            modifier = Modifier.fillMaxWidth(0.8f),
+                        )
+                    }
 
-                AppArcList(
-                    listApps,
-                    onLaunch = { repository.launch(it.packageName) },
-                    onLongPress = ::toggleDock,
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(end = w * 0.025f)
-                        .width(w * 0.6f)
-                        .fillMaxHeight(0.96f),
-                )
+                    Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        NavCard(onOpen = { repository.launch(it) }, modifier = Modifier.fillMaxWidth())
 
-                ClockDial(
-                    diameter = minOf(w * 0.28f, h * 0.94f),
-                    modifier = Modifier.align(Alignment.CenterStart).padding(start = w * 0.14f),
-                )
+                        Row(Modifier.fillMaxWidth().weight(0.8f), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            ActionTile(Icons.Default.Home, "Casa", { goTo(true) }, Modifier.weight(1f).fillMaxHeight(), hue = 15f, onLongClick = { editingAddress = true })
+                            ActionTile(Icons.Default.Work, "Trabajo", { goTo(false) }, Modifier.weight(1f).fillMaxHeight(), hue = 330f, onLongClick = { editingAddress = false })
+                            ActionTile(Icons.Default.Mic, "Asistente", ::voiceAssistant, Modifier.weight(1f).fillMaxHeight(), hue = 270f)
+                        }
 
-                Box(
-                    Modifier
-                        .align(Alignment.CenterStart)
-                        .padding(start = 14.dp)
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .border(1.5.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f), CircleShape)
-                        .clickable { voiceAssistant() },
-                    contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Default.Mic, "Asistente de voz", Modifier.size(28.dp)) }
-
-                SpeedCard(
-                    limit = if (settings.speedAlert) settings.speedLimit else null,
-                    modifier = Modifier.align(Alignment.BottomStart).padding(start = 14.dp, bottom = 6.dp).width(w * 0.12f),
-                )
+                        // Favourites (long press in the full list to change them) plus the button to everything else.
+                        val tiles: List<AppInfo?> = (dockApps.take(5) + listOf<AppInfo?>(null)).let { it.take(6) }
+                        tiles.chunked(3).forEachIndexed { rowIdx, row ->
+                            Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                row.forEachIndexed { col, app ->
+                                    if (app == null) ActionTile(Icons.Default.GridView, "Todas las apps", { showApps = true }, Modifier.weight(1f).fillMaxHeight(), hue = 200f)
+                                    else AppTile(app, { repository.launch(app.packageName) }, { toggleDock(app) }, Modifier.weight(1f).fillMaxHeight(), hue = listOf(35f, 330f, 270f, 15f, 200f, 300f)[(rowIdx * 3 + col) % 6])
+                                }
+                                repeat(3 - row.size) { Box(Modifier.weight(1f)) }
+                            }
+                        }
+                    }
+                }
             }
 
-            MediaBar(onOpenBluetooth = { BluetoothMusic.open(context, settings.btMusicApp) })
+            MediaBar(onOpenBluetooth = {
+                // Without a phone linked, offer the QR pairing help; with one, the system screen manages it.
+                if (MediaState.state.value.btConnected || LinkServer.state.value.connected) BluetoothMusic.openSettings(context) else showBtQr = true
+            })
         }
 
         // Only composed while open, so the full app grid costs nothing on the home screen.
@@ -211,6 +227,9 @@ fun HomeScreen(
             }
         }
     }
+
+    if (showBtQr) BluetoothQrDialog { showBtQr = false }
+    LinkApprovalDialog()
 
     if (showSettings) {
         SettingsDialog(

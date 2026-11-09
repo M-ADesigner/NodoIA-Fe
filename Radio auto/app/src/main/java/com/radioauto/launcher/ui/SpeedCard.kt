@@ -65,8 +65,8 @@ fun SpeedCard(limit: Int?, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.Start) {
         if (granted) {
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(kmh?.toString() ?: "--", fontSize = 40.sp, color = if (over) accent else MaterialTheme.colorScheme.onSurface)
-                Text("km/h", fontSize = 13.sp, color = accent, modifier = Modifier.padding(bottom = 7.dp))
+                Text(kmh?.toString() ?: "--", fontSize = 64.sp, color = if (over) accent else MaterialTheme.colorScheme.onSurface)
+                Text("km/h", fontSize = 18.sp, color = accent, modifier = Modifier.padding(bottom = 12.dp))
             }
             Canvas(Modifier.fillMaxWidth().height(4.dp)) {
                 drawRoundRect(track, size = size, cornerRadius = CornerRadius(size.height))
@@ -82,7 +82,7 @@ fun SpeedCard(limit: Int?, modifier: Modifier = Modifier) {
         Text(
             "${km.format((tracking.totalMeters / 1000).toLong())} km",
             Modifier.clip(RoundedCornerShape(8.dp)).clickable { editing = true }.padding(vertical = 4.dp),
-            fontSize = 15.sp,
+            fontSize = 18.sp,
         )
         Text(
             "Viaje %.1f km".format(Locale.forLanguageTag("es"), tracking.tripMeters / 1000),
@@ -91,7 +91,7 @@ fun SpeedCard(limit: Int?, modifier: Modifier = Modifier) {
                 val s = TrackingState.state.value
                 scope.launch { Prefs(context.applicationContext).saveTracking(s.totalMeters, s.tripMeters) }
             },
-            fontSize = 12.sp,
+            fontSize = 15.sp,
             color = accent,
         )
     }

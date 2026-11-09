@@ -24,6 +24,8 @@ import android.os.Build
 import android.os.SystemClock
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
+import android.support.v4.media.MediaMetadataCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
 import kotlinx.coroutines.CoroutineScope
@@ -42,10 +44,13 @@ data class NowPlaying(
     val isPlaying: Boolean = false,
     val title: String = "",
     val artist: String = "",
+    val album: String = "",
     val albumArt: Bitmap? = null,
     val positionMs: Long = 0,
     val durationMs: Long = 0,
     val sourcePackage: String? = null,
+    /** Audio (A2DP) profile connected; without it the radio cannot play the phone's music. */
+    val a2dpConnected: Boolean = false,
 ) {
     /** True when there is something to show: a track name or audio that is playing. */
     val hasMusic: Boolean get() = title.isNotEmpty() || isPlaying
@@ -74,11 +79,19 @@ class MediaListenerService : NotificationListenerService() {
 
     override fun onListenerConnected() {
         MediaState.attach(this)
+        refreshNav()
     }
 
     override fun onListenerDisconnected() {
         MediaState.detach()
+        NavState.update(this, null)
     }
+
+    override fun onNotificationPosted(sbn: android.service.notification.StatusBarNotification?) = refreshNav()
+
+    override fun onNotificationRemoved(sbn: android.service.notification.StatusBarNotification?) = refreshNav()
+
+    private fun refreshNav() = NavState.update(this, runCatching { activeNotifications }.getOrNull())
 }
 
 object MediaState {
@@ -110,6 +123,7 @@ object MediaState {
     private var fallbackArtist = ""
     private var fallbackPlaying: Boolean? = null
 
+    private const val BLUETOOTH_PACKAGE = "com.android.bluetooth"
     private const val A2DP_SINK_ACTION = "android.bluetooth.a2dp-sink.profile.action.CONNECTION_STATE_CHANGED"
     private const val HEADSET_CLIENT_ACTION = "android.bluetooth.headsetclient.profile.action.CONNECTION_STATE_CHANGED"
     private const val AVRCP_TRACK_EVENT = "android.bluetooth.avrcp-controller.profile.action.TRACK_EVENT"
@@ -126,10 +140,15 @@ object MediaState {
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                BluetoothDevice.ACTION_ACL_CONNECTED -> onAcl(context, intent, connected = true)
+                BluetoothDevice.ACTION_ACL_CONNECTED -> {
+                    BtMediaConnector.connect()
+                    onAcl(context, intent, connected = true)
+                }
                 BluetoothDevice.ACTION_ACL_DISCONNECTED -> onAcl(context, intent, connected = false)
-                BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED, A2DP_SINK_ACTION -> onProfile(context, intent, bringFront = true)
-                BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED, HEADSET_CLIENT_ACTION -> onProfile(context, intent, bringFront = false)
+                BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED -> onProfile(context, intent, BtProfiles.A2DP, bringFront = true)
+                A2DP_SINK_ACTION -> onProfile(context, intent, BtProfiles.A2DP_SINK, bringFront = true)
+                BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED -> onProfile(context, intent, BtProfiles.HEADSET, bringFront = false)
+                HEADSET_CLIENT_ACTION -> onProfile(context, intent, BtProfiles.HEADSET_CLIENT, bringFront = false)
                 MUSIC_META, MUSIC_STATE, AVRCP_TRACK_EVENT -> onTrackBroadcast(intent)
             }
         }
@@ -141,6 +160,8 @@ object MediaState {
         val app = context.applicationContext
         appContext = app
         profileLink = profileConnected(app)
+        BtProfiles.init(app, onChange = ::publish)
+        BtMediaConnector.init(app, onChange = ::publish)
 
         val filter = IntentFilter().apply {
             listOf(
@@ -185,6 +206,7 @@ object MediaState {
         if (!visible) return
         refreshAccess()
         publish()
+        BtMediaConnector.connect()
         ticker = scope.launch {
             while (true) {
                 delay(1_000)
@@ -208,11 +230,15 @@ object MediaState {
     }
 
     /** True when a session answered, so the caller does not need to fall back to the media keys. */
-    fun skipPrevious(): Boolean = controller?.transportControls?.skipToPrevious() != null
+    fun skipPrevious(): Boolean = BtMediaConnector.skipToPrevious() || controller?.transportControls?.skipToPrevious() != null
 
-    fun skipNext(): Boolean = controller?.transportControls?.skipToNext() != null
+    fun skipNext(): Boolean = BtMediaConnector.skipToNext() || controller?.transportControls?.skipToNext() != null
 
     fun togglePlay(): Boolean {
+        if (BtMediaConnector.controller != null) {
+            if (BtMediaConnector.isPlaying) BtMediaConnector.pause() else BtMediaConnector.play()
+            return true
+        }
         val c = controller ?: return false
         if (c.playbackState?.state == PlaybackState.STATE_PLAYING) c.transportControls.pause() else c.transportControls.play()
         return true
@@ -240,13 +266,36 @@ object MediaState {
         val c = controller
         val link = profileLink || connectedPhones.isNotEmpty()
         val now = SystemClock.elapsedRealtime()
-        _state.value = if (c != null) {
+        val bt = BtMediaConnector.controller
+        _state.value = if (bt != null) {
+            val meta = bt.metadata
+            val ps = bt.playbackState
+            val playing = ps?.state == PlaybackStateCompat.STATE_PLAYING
+            val duration = (meta?.getLong(MediaMetadataCompat.METADATA_KEY_DURATION) ?: 0L).coerceAtLeast(0)
+            NowPlaying(
+                btConnected = true,
+                a2dpConnected = BtProfiles.a2dp,
+                isPlaying = playing,
+                title = meta?.getString(MediaMetadataCompat.METADATA_KEY_TITLE).orEmpty(),
+                artist = meta?.getString(MediaMetadataCompat.METADATA_KEY_ARTIST).orEmpty(),
+                album = meta?.getString(MediaMetadataCompat.METADATA_KEY_ALBUM).orEmpty(),
+                albumArt = meta?.getBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART)
+                    ?: meta?.getBitmap(MediaMetadataCompat.METADATA_KEY_ART)
+                    ?: meta?.getBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON),
+                positionMs = extrapolatePosition(
+                    ps?.position ?: 0, ps?.lastPositionUpdateTime ?: now, now, ps?.playbackSpeed ?: 1f, playing, duration,
+                ),
+                durationMs = duration,
+                sourcePackage = BLUETOOTH_PACKAGE,
+            )
+        } else if (c != null) {
             val meta = c.metadata
             val ps = c.playbackState
             val playing = ps?.state == PlaybackState.STATE_PLAYING
             val duration = (meta?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L).coerceAtLeast(0)
             NowPlaying(
                 btConnected = link || isBtSource(c.packageName),
+                a2dpConnected = BtProfiles.a2dp,
                 isPlaying = playing,
                 title = meta?.getString(MediaMetadata.METADATA_KEY_TITLE).orEmpty(),
                 artist = meta?.getString(MediaMetadata.METADATA_KEY_ARTIST).orEmpty(),
@@ -264,6 +313,7 @@ object MediaState {
             val audioOn = ctx?.let { (it.getSystemService(Context.AUDIO_SERVICE) as AudioManager).isMusicActive } == true
             NowPlaying(
                 btConnected = link,
+                a2dpConnected = BtProfiles.a2dp,
                 isPlaying = fallbackPlaying ?: (link && audioOn),
                 title = fallbackTitle,
                 artist = fallbackArtist,
@@ -279,8 +329,10 @@ object MediaState {
         val device = IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java) ?: return
         if (device.bluetoothClass?.majorDeviceClass != BluetoothClass.Device.Major.PHONE) return
         if (connected) connectedPhones.add(device.address) else connectedPhones.remove(device.address)
+        if (connected) BtProfiles.refresh()
         if (!connected && connectedPhones.isEmpty()) {
             profileLink = false
+            BtProfiles.clear()
             fallbackTitle = ""
             fallbackArtist = ""
             fallbackPlaying = null
@@ -288,8 +340,10 @@ object MediaState {
         publish()
     }
 
-    private fun onProfile(context: Context, intent: Intent, bringFront: Boolean) {
-        when (intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1)) {
+    private fun onProfile(context: Context, intent: Intent, profile: Int, bringFront: Boolean) {
+        val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1)
+        BtProfiles.onBroadcast(profile, state)
+        when (state) {
             BluetoothProfile.STATE_CONNECTED -> {
                 profileLink = true
                 if (bringFront) LauncherFocus.schedule(context)

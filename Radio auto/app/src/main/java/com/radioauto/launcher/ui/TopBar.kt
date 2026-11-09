@@ -118,13 +118,12 @@ fun TopBar(
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             weather?.let {
                 Icon(it.kind.icon(), null, Modifier.size(32.dp), it.kind.color())
-                Text("${it.tempC}°", fontSize = 26.sp)
+                Text("${it.tempC}°", fontSize = 30.sp)
             }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             CircleButton(Icons.Default.Settings, "Ajustes del launcher", onOpenSettings)
-            PlacesMenu(nav)
             Box(Modifier.width(1.dp).height(30.dp).background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)))
             IconButton(onCamera, Modifier.size(48.dp)) { Icon(Icons.Default.CameraAlt, "Cámara", Modifier.size(28.dp)) }
         }
@@ -134,7 +133,7 @@ fun TopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp, Alignment.End),
         ) {
-            Text(compassPoint(tracking.bearing), fontSize = 22.sp)
+            Text(compassPoint(tracking.bearing), fontSize = 26.sp)
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(Icons.Default.SatelliteAlt, null, Modifier.size(24.dp))
                 Text(tracking.satellites?.toString() ?: "--", fontSize = 20.sp)
