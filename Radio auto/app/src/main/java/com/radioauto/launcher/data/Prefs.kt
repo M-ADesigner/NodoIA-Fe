@@ -16,7 +16,14 @@ private val Context.store by preferencesDataStore("launcher_prefs")
 
 enum class DayNightMode(val label: String) { AUTO("Auto"), DAY("Día"), NIGHT("Noche") }
 
-enum class Palette(val label: String) { BLUE("Azul"), VIOLET("Violeta"), GREEN("Verde"), ORANGE("Naranja"), RED("Rojo") }
+enum class Palette(val label: String, val neon: Long, val swatch: Long = neon) {
+    BLUE("Azul", 0xFF5CC8FF), VIOLET("Violeta", 0xFFB48CFF), GREEN("Verde", 0xFF6BE3A0), ORANGE("Ámbar", 0xFFE0A458), RED("Rojo", 0xFFFF2E5B),
+    /** Pure black panels with a soft white accent. */
+    BLACK("Negro", 0xFFE6E6EC, 0xFF000000),
+}
+
+/** Typeface for the whole launcher. */
+enum class FontChoice(val label: String) { FUTURISTA("Futurista"), CLASICA("Clásica"), GOTICA("Gótica"), SISTEMA("Sistema") }
 
 data class LauncherSettings(
     /** null until the driver customises the dock; then the default apps are shown. */
@@ -41,6 +48,14 @@ data class LauncherSettings(
     /** Pause between two reading rounds; a slow clone needs more air. */
     val obdIntervalMs: Int = 500,
     val obdPort: Int = 35000,
+    /** Which of the three right-hand panels the driver left open: CAR, MAP or MUSIC. */
+    val panel: String = "MAP",
+    val font: FontChoice = FontChoice.FUTURISTA,
+    /** Navigator used last ("com.waze", "com.google.android.apps.maps" or "OSM"); marked on the chooser. */
+    val navApp: String = "",
+    /** CHOOSE shows the navigator chooser in the Map tab; OSM shows the built-in map. */
+    val mapView: String = "CHOOSE",
+    val fx: FxSettings = FxSettings(),
 )
 
 class Prefs(private val context: Context) {
@@ -60,7 +75,12 @@ class Prefs(private val context: Context) {
     private val obdIntervalKey = intPreferencesKey("obd_interval_ms")
     private val obdHostKey = stringPreferencesKey("obd_host")
     private val obdPortKey = intPreferencesKey("obd_port")
-    private val latKey = doublePreferencesKey("last_lat")
+    private val panelKey = stringPreferencesKey("right_panel")
+    private val fontKey = stringPreferencesKey("font")
+    private val navAppKey = stringPreferencesKey("nav_app")
+    private val mapViewKey = stringPreferencesKey("map_view")
+    private val fxKey = stringPreferencesKey("sound_fx")
+    private val latKey =doublePreferencesKey("last_lat")
     private val lonKey = doublePreferencesKey("last_lon")
     private val totalKey = doublePreferencesKey("total_meters")
     private val tripKey = doublePreferencesKey("trip_meters")
@@ -109,6 +129,29 @@ class Prefs(private val context: Context) {
 
     suspend fun setNextOilKm(km: Int) {
         context.store.edit { it[nextOilKey] = km.coerceIn(0, 999_999) }
+    }
+
+    suspend fun setNav(navApp: String, mapView: String) {
+        context.store.edit {
+            it[navAppKey] = navApp
+            it[mapViewKey] = mapView
+        }
+    }
+
+    suspend fun setFx(fx: FxSettings) {
+        context.store.edit { it[fxKey] = listOf(if (fx.on) 1 else 0, fx.bass, fx.virtualizer, fx.loudness, fx.reverb).joinToString(",") + "|" + fx.preset + "|" + fx.bands.joinToString(",") }
+    }
+
+    suspend fun setMapView(mapView: String) {
+        context.store.edit { it[mapViewKey] = mapView }
+    }
+
+    suspend fun setFont(font: FontChoice) {
+        context.store.edit { it[fontKey] = font.name }
+    }
+
+    suspend fun setPanel(panel: String) {
+        context.store.edit { it[panelKey] = panel }
     }
 
     suspend fun setObdBtAddress(address: String) {
@@ -169,5 +212,20 @@ class Prefs(private val context: Context) {
         obdBtAddress = this[obdBtKey].orEmpty(),
         obdIntervalMs = this[obdIntervalKey] ?: 500,
         obdPort = this[obdPortKey] ?: 35000,
+        panel = this[panelKey] ?: "MAP",
+        font = this[fontKey]?.let { runCatching { FontChoice.valueOf(it) }.getOrNull() } ?: FontChoice.FUTURISTA,
+        navApp = this[navAppKey].orEmpty(),
+        mapView = this[mapViewKey] ?: "CHOOSE",
+        fx = this[fxKey]?.let(::parseFx) ?: FxSettings(),
     )
 }
+
+/** "on,bass,virt,loud,reverb|preset|b0,b1,..." as written by [Prefs.setFx]; null when it is damaged. */
+private fun parseFx(s: String): FxSettings? = runCatching {
+    val (head, preset, bands) = s.split("|")
+    val h = head.split(",").map { it.toInt() }
+    FxSettings(
+        on = h[0] == 1, bass = h[1], virtualizer = h[2], loudness = h[3], reverb = h[4], preset = preset,
+        bands = bands.split(",").filter { it.isNotBlank() }.map { it.toInt() },
+    )
+}.getOrNull()

@@ -45,6 +45,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.unit.dp
 import com.radioauto.launcher.data.AppInfo
 import com.radioauto.launcher.data.AppRepository
@@ -60,6 +62,9 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
+/** Extra height taken off the window at the bottom; none needed now that it starts below the tabs. */
+private const val WINDOW_TITLE_PX = 0
+
 @Composable
 fun HomeScreen(
     apps: List<AppInfo>,
@@ -73,10 +78,26 @@ fun HomeScreen(
     var showApps by remember { mutableStateOf(false) }
     var showBtQr by remember { mutableStateOf(false) }
     var showObdHelp by remember { mutableStateOf(false) }
+    var showNoNet by remember { mutableStateOf(false) }
     var showObdFull by remember { mutableStateOf(false) }
     var editingAddress by remember { mutableStateOf<Boolean?>(null) } // true = Casa, false = Trabajo
 
     val byPackage = apps.associateBy { it.packageName }
+
+    // Where the right-hand panel is on the screen: a navigator opened from here gets a window of exactly that size.
+    val view = androidx.compose.ui.platform.LocalView.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val panelBounds = remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
+    fun screenRect(): android.graphics.Rect? {
+        val b = panelBounds[0] ?: return null
+        val at = IntArray(2)
+        view.getLocationOnScreen(at)
+        // The status bar comes back while the navigator is open and pushes the launcher down, so count it even if hidden now.
+        val bar = androidx.core.view.ViewCompat.getRootWindowInsets(view)
+            ?.getInsetsIgnoringVisibility(androidx.core.view.WindowInsetsCompat.Type.statusBars())?.top ?: 0
+        val tabs = (70 * density.density).toInt()
+        return android.graphics.Rect((at[0] + b.left).toInt(), (at[1] + maxOf(b.top.toInt(), bar)) + tabs, (at[0] + b.right).toInt(), (at[1] + b.bottom).toInt() - WINDOW_TITLE_PX)
+    }
     val dockPackages = settings.dock ?: defaultDock(apps)
     // Driving mode: above 10 km/h video and web shortcuts are hidden from "Todas las apps". Only the flip is observed,
     // so the screen is not rebuilt on every GPS fix.
@@ -94,7 +115,7 @@ fun HomeScreen(
     fun goTo(home: Boolean) {
         val address = if (home) settings.homeAddress else settings.workAddress
         if (address.isBlank()) editingAddress = home
-        else Navigator.navigateTo(context, address, byPackage.keys)
+        else Navigator.navigateTo(context, address, byPackage.keys, settings.navApp, screenRect())
     }
 
     fun launchIntent(intent: Intent) {
@@ -108,6 +129,17 @@ fun HomeScreen(
 
     // The session of the chosen Bluetooth app wins over any other player.
     LaunchedEffect(settings.btMusicApp) { MediaState.setPreferred(settings.btMusicApp) }
+    // When music starts (from the phone, by Bluetooth or the link) the player takes the big panel; after that the driver is free to switch.
+    val nowPlaying by MediaState.state.collectAsState()
+    val linkNow by LinkServer.state.collectAsState()
+    val isPlayingNow = (linkNow.track?.playing ?: nowPlaying.isPlaying)
+    LaunchedEffect(isPlayingNow) {
+        // The phone's music and the internet radio never play together: whoever starts last wins.
+        if (isPlayingNow) com.radioauto.launcher.data.RadioPlayer.stop()
+        if (isPlayingNow && settings.panel != PanelMode.MUSIC.name) prefs.setPanel(PanelMode.MUSIC.name)
+    }
+    // The sound effects follow the settings, and come back on their own after a restart.
+    LaunchedEffect(settings.fx) { com.radioauto.launcher.data.SoundFx.apply(context, settings.fx) }
 
     val background = MaterialTheme.colorScheme.background
     // The OBD adapter over Bluetooth needs the nearby-devices permission on Android 12+; asked when the driver picks it.
@@ -120,31 +152,104 @@ fun HomeScreen(
         )
     }
 
+    // The navigator the driver picked, else the first map app found; it opens in a window beside the launcher.
     fun openMapApp() {
-        MAP_PACKAGES.firstOrNull { it in byPackage }?.let { repository.launch(it) }
+        val pkg = settings.navApp.takeIf { it in byPackage } ?: MAP_PACKAGES.firstOrNull { it in byPackage } ?: return
+        com.radioauto.launcher.embedded.EmbeddedAppManager.open(context, pkg, screenRect())
     }
 
-    Box(Modifier.fillMaxSize().background(background)) {
+    val embedded by com.radioauto.launcher.embedded.EmbeddedAppManager.state.collectAsState()
+
+    val mapChoices = remember(apps) {
+        com.radioauto.launcher.data.MapWindow.NAV_APPS.map { (pkg, name) ->
+            val app = apps.firstOrNull { it.packageName == pkg }
+            MapChoice(pkg, name, app?.icon, "NAVEGACIÓN COMPLETA", installed = app != null)
+        } + MapChoice("OSM", "Mapa propio", null, "SIN INTERNET: OK")
+    }
+
+    Box(
+        Modifier.fillMaxSize().background(background).drawWithCache {
+            // Fine horizontal lines over everything, drawn from a cache so they cost nothing per frame.
+            val step = 3.dp.toPx()
+            val color = Color.White.copy(alpha = 0.025f)
+            onDrawWithContent {
+                drawContent()
+                var y = 0f
+                while (y < size.height) {
+                    drawLine(color, Offset(0f, y), Offset(size.width, y), 1f)
+                    y += step
+                }
+            }
+        },
+    ) {
         Column(Modifier.fillMaxSize().statusBarsPadding().padding(horizontal = 8.dp, vertical = 4.dp)) {
             // Left: car status. Right: the map with the next turn on top and the usual destinations on the side.
             Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CarStatusPanel(
                     limit = if (settings.speedAlert) settings.speedLimit else null,
                     nextOilKm = settings.nextOilKm,
-                    modifier = Modifier.weight(0.31f).fillMaxHeight(),
+                    modifier = Modifier.width(190.dp).fillMaxHeight(),
                 )
-                MapPanel(
-                    onSearch = ::openMapApp,
-                    onHome = { goTo(true) },
-                    onWork = { goTo(false) },
+                RightPanel(
+                    mode = PanelMode.from(settings.panel),
+                    onMode = { scope.launch { prefs.setPanel(it.name) } },
                     onSettings = { showSettings = true },
-                    modifier = Modifier.weight(0.69f).fillMaxHeight(),
-                    overlay = {
-                        Column(Modifier.width(340.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            ObdAlertBanner(settings.nextOilKm)
+                    modifier = Modifier.weight(1f).fillMaxHeight().onGloballyPositioned { panelBounds[0] = it.boundsInWindow() },
+                ) {
+                    if (settings.mapView == "OSM") {
+                        MapPanel(
+                            onSearch = ::openMapApp,
+                            onHome = { goTo(true) },
+                            onWork = { goTo(false) },
+                            onChooseApp = { scope.launch { prefs.setMapView("CHOOSE") } },
+                            modifier = Modifier.fillMaxSize(),
+                            overlay = {
+                                Column(Modifier.width(340.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    ObdAlertBanner(settings.nextOilKm)
+                                }
+                            },
+                        )
+                    } else if (embedded !is com.radioauto.launcher.embedded.EmbeddedAppState.Idle) {
+                        val pkg = when (val e = embedded) {
+                            is com.radioauto.launcher.embedded.EmbeddedAppState.Loading -> e.packageName
+                            is com.radioauto.launcher.embedded.EmbeddedAppState.NotInstalled -> e.packageName
+                            is com.radioauto.launcher.embedded.EmbeddedAppState.Opened -> e.packageName
+                            is com.radioauto.launcher.embedded.EmbeddedAppState.Failed -> e.packageName
+                            else -> ""
                         }
-                    },
-                )
+                        val manager = com.radioauto.launcher.embedded.EmbeddedAppManager
+                        EmbeddedAppContainer(
+                            state = embedded,
+                            app = byPackage[pkg],
+                            actions = EmbeddedAppActions(
+                                onOpen = { manager.open(context, pkg, screenRect()) },
+                                onExpand = { manager.expand(context) },
+                                onBack = { manager.backToLauncher(context) },
+                                onInstall = { com.radioauto.launcher.data.MapWindow.install(context, pkg) },
+                                onChange = { manager.dismiss() },
+                            ),
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    } else {
+                        MapChooser(
+                            mapChoices, settings.navApp,
+                            onPick = { choice ->
+                                if (!choice.installed) {
+                                    com.radioauto.launcher.data.MapWindow.install(context, choice.id)
+                                } else if (choice.id == "OSM") {
+                                    scope.launch { prefs.setNav("OSM", "OSM") }
+                                } else if (!hasInternet(context)) {
+                                    // Waze and Google Maps need data; the own map is the one that works offline.
+                                    showNoNet = true
+                                } else {
+                                    scope.launch { prefs.setNav(choice.id, "CHOOSE") }
+                                    com.radioauto.launcher.embedded.EmbeddedAppManager.open(context, choice.id, screenRect())
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(6.dp))
@@ -157,6 +262,8 @@ fun HomeScreen(
                 onVoice = ::voiceAssistant,
                 // Connected: the full readings. Not connected: why, and what to try.
                 onObd = { if (com.radioauto.launcher.data.Obd.state.value.connected) showObdFull = true else showObdHelp = true },
+                demoOn = settings.obdConnection == com.radioauto.launcher.data.ObdConnection.DEMO,
+                onStopDemo = { scope.launch { prefs.setObdConnection(com.radioauto.launcher.data.ObdConnection.AUTO) } },
             )
         }
 
@@ -174,7 +281,8 @@ fun HomeScreen(
                     apps = if (moving) apps.filter { it.packageName !in distracting } else apps,
                     onLaunch = {
                         showApps = false
-                        repository.launch(it.packageName)
+                        // Any app opens beside the launcher when the device allows it.
+                        com.radioauto.launcher.embedded.EmbeddedAppManager.open(context, it.packageName, screenRect())
                     },
                     onLongPress = ::toggleDock,
                     modifier = Modifier
@@ -201,6 +309,21 @@ fun HomeScreen(
         )
     }
     LinkApprovalDialog()
+    if (showNoNet) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showNoNet = false },
+            title = { androidx.compose.material3.Text("Sin internet") },
+            text = { androidx.compose.material3.Text("Este mapa necesita internet. Conéctate a una red WiFi o activa los datos del celular, o usa «Mapa propio», que funciona sin conexión.") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showNoNet = false
+                    val action = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) android.provider.Settings.Panel.ACTION_INTERNET_CONNECTIVITY else android.provider.Settings.ACTION_WIFI_SETTINGS
+                    launchIntent(Intent(action))
+                }) { androidx.compose.material3.Text("Conectar") }
+            },
+            dismissButton = { androidx.compose.material3.TextButton(onClick = { showNoNet = false }) { androidx.compose.material3.Text("Cerrar") } },
+        )
+    }
 
     if (showSettings) {
         SettingsDialog(
@@ -209,6 +332,8 @@ fun HomeScreen(
             actions = SettingsActions(
                 onMode = { scope.launch { prefs.setMode(it) } },
                 onPalette = { scope.launch { prefs.setPalette(it) } },
+                onFont = { scope.launch { prefs.setFont(it) } },
+                onFx = { scope.launch { prefs.setFx(it) } },
                 onBtMusicApp = { scope.launch { prefs.setBtMusicApp(it) } },
                 onKeepLauncher = { scope.launch { prefs.setKeepLauncherOnBluetooth(it) } },
                 onSpeedAlert = { scope.launch { prefs.setSpeedAlert(it) } },
@@ -247,9 +372,17 @@ fun HomeScreen(
             onSave = { address ->
                 scope.launch { prefs.setAddress(home, address) }
                 editingAddress = null
-                Navigator.navigateTo(context, address, byPackage.keys)
+                Navigator.navigateTo(context, address, byPackage.keys, settings.navApp, screenRect())
             },
             onDismiss = { editingAddress = null },
         )
     }
+}
+
+/** True when the radio has a network that reaches the internet. */
+private fun hasInternet(context: android.content.Context): Boolean {
+    val cm = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+    val caps = cm.getNetworkCapabilities(cm.activeNetwork) ?: return false
+    return caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+        caps.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED)
 }

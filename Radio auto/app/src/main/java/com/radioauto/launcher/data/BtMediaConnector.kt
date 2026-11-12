@@ -3,6 +3,9 @@ package com.radioauto.launcher.data
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
+import android.os.SystemClock
+import android.util.Log
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaControllerCompat
@@ -37,6 +40,10 @@ object BtMediaConnector {
     private var browser: MediaBrowserCompat? = null
     private var retry: Job? = null
     private var nextFallback = 0
+    private var lastAutoPlay = 0L
+
+    private fun musicActive() =
+        (appContext?.getSystemService(Context.AUDIO_SERVICE) as? AudioManager)?.isMusicActive == true
 
     /** The Bluetooth session while the browser is connected; null otherwise. */
     var controller: MediaControllerCompat? = null
@@ -51,7 +58,16 @@ object BtMediaConnector {
 
     private val controllerCallback = object : MediaControllerCompat.Callback() {
         override fun onMetadataChanged(metadata: MediaMetadataCompat?) = notifyChanged()
-        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) = notifyChanged()
+        override fun onPlaybackStateChanged(state: PlaybackStateCompat?) {
+            Log.i("BtMedia", "state=${state?.state} musicActive=${musicActive()}")
+            // Play pressed on the phone: the sink only takes the audio once its own session gets Play.
+            val now = SystemClock.elapsedRealtime()
+            if (state?.state == PlaybackStateCompat.STATE_PLAYING && (!musicActive() || RadioPlayer.isPlaying) && now - lastAutoPlay > 3_000) {
+                lastAutoPlay = now
+                controller?.transportControls?.play()
+            }
+            notifyChanged()
+        }
         override fun onSessionDestroyed() {
             drop()
             connect()

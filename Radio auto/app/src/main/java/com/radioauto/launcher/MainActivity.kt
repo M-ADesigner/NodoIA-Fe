@@ -36,6 +36,7 @@ class MainActivity : ComponentActivity() {
 
         MediaState.init(applicationContext)
         LinkServer.start(applicationContext)
+        com.radioauto.launcher.link.LinkMediaSession.start(applicationContext)
 
         val repository = AppRepository(applicationContext)
         val prefs = Prefs(applicationContext)
@@ -49,8 +50,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val apps by remember { repository.observe() }.collectAsState(initial = emptyList())
             val settings by remember { prefs.settings }.collectAsState(initial = LauncherSettings())
-            LauncherTheme(mode = settings.mode, palette = settings.palette) {
-                HomeScreen(apps, settings, repository, prefs)
+            LauncherTheme(mode = settings.mode, palette = settings.palette, font = settings.font) {
+                com.radioauto.launcher.ui.ScreenScale { HomeScreen(apps, settings, repository, prefs) }
             }
         }
     }
@@ -67,23 +68,11 @@ class MainActivity : ComponentActivity() {
     }
 
     // Steering wheel buttons arrive as media keys; volume is left to the system.
-    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        val action: ((Context) -> Unit)? = when (keyCode) {
-            KeyEvent.KEYCODE_MEDIA_NEXT -> BluetoothMusic::next
-            KeyEvent.KEYCODE_MEDIA_PREVIOUS -> BluetoothMusic::previous
-            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PAUSE -> BluetoothMusic::playPause
-            else -> null
-        }
-        if (action == null) return super.onKeyDown(keyCode, event)
-        if (event.repeatCount == 0) action(this)
-        return true
-    }
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean =
+        com.radioauto.launcher.data.SteeringKeys.handle(this, keyCode, true, event.repeatCount) || super.onKeyDown(keyCode, event)
 
-    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean = when (keyCode) {
-        KeyEvent.KEYCODE_MEDIA_NEXT, KeyEvent.KEYCODE_MEDIA_PREVIOUS, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
-        KeyEvent.KEYCODE_MEDIA_PLAY, KeyEvent.KEYCODE_MEDIA_PAUSE -> true
-        else -> super.onKeyUp(keyCode, event)
-    }
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean =
+        com.radioauto.launcher.data.SteeringKeys.handle(this, keyCode, false, 0) || super.onKeyUp(keyCode, event)
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)

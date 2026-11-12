@@ -156,7 +156,7 @@ private val Good = Color(0xFF4CAF50)
 private val Warn = Color(0xFFF9A825)
 private val Bad = Color(0xFFE53935)
 private val Muted = Hud.Muted
-private val Card = Hud.Mid
+private val Card get() = Hud.Mid
 
 /** A coloured stretch of the gauge bar: from..to in the bar's own units. */
 private class Zone(val from: Float, val to: Float, val color: Color)

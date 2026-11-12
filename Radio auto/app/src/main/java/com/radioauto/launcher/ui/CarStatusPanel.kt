@@ -65,7 +65,8 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private val Muted = Hud.Muted
-private val Accent = Hud.Accent
+// A getter, so a new colour from Settings is picked up.
+private val Accent get() = Hud.Accent
 private const val GAUGE_MAX = 240f
 private const val SWEEP = 270f
 private const val START = 135f
@@ -89,7 +90,7 @@ fun CarStatusPanel(limit: Int?, nextOilKm: Int, modifier: Modifier = Modifier) {
     // OBD speed is exact when present; otherwise the GPS speed.
     val kmh = obd.speedKmh ?: tracking.kmh
     val over = limit != null && (kmh ?: 0) > limit
-    val needle = if (over) Color(0xFFFF5252) else Accent
+    val needle = if (over) Hud.Hot else Accent
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Gauge(kmh, obd.rpm, needle, Modifier.fillMaxWidth().weight(1f).clickable { if ((kmh ?: 0) == 0) showObd = true })
@@ -99,21 +100,21 @@ fun CarStatusPanel(limit: Int?, nextOilKm: Int, modifier: Modifier = Modifier) {
         if (obd.connected) {
             StatRow(
                 Icons.Default.Speed, "Acelerador", "En vivo",
-                obd.throttlePct?.let { "$it%" } ?: "--", (obd.throttlePct ?: 0) / 100f, Modifier.height(54.dp),
+                obd.throttlePct?.let { "$it%" } ?: "--", (obd.throttlePct ?: 0) / 100f, Modifier.height(58.dp),
                 onClick = { if ((kmh ?: 0) == 0) detail = ObdDetail.ACELERADOR },
             )
         } else {
             StatRow(
                 Icons.Default.Build, "Aceite", "Próximo a los ${km.format(nextOilKm.toLong())} km",
                 "${km.format(remaining.coerceAtLeast(0).toLong())} km",
-                1f - remaining.coerceIn(0, OIL_INTERVAL_KM) / OIL_INTERVAL_KM.toFloat(), Modifier.height(54.dp),
+                1f - remaining.coerceIn(0, OIL_INTERVAL_KM) / OIL_INTERVAL_KM.toFloat(), Modifier.height(58.dp),
                 onClick = { if ((kmh ?: 0) == 0) detail = ObdDetail.MANTENCION },
             )
         }
         StatRow(
             Icons.Default.Route, "Viaje", "${km.format((tracking.totalMeters / 1000).toLong())} km totales",
             "%.1f km".format(Locale.forLanguageTag("es"), tracking.tripMeters / 1000), 0f,
-            Modifier.height(54.dp),
+            Modifier.height(58.dp),
             onClick = { editing = true },
             onLongClick = {
                 TrackingState.resetTrip()
@@ -121,7 +122,7 @@ fun CarStatusPanel(limit: Int?, nextOilKm: Int, modifier: Modifier = Modifier) {
                 scope.launch { Prefs(context.applicationContext).saveTracking(s.totalMeters, s.tripMeters) }
             },
         )
-        Row(Modifier.fillMaxWidth().height(58.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.fillMaxWidth().height(50.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             if (obd.connected) {
                 MiniStat(Icons.Default.LocalGasStation, "Comb.", obd.fuelPct?.let { "$it%" } ?: "--", Modifier.weight(1f).clickable { if ((kmh ?: 0) == 0) detail = ObdDetail.COMBUSTIBLE })
                 MiniStat(Icons.Default.Thermostat, "Motor", obd.coolantC?.let { "$it°" } ?: "--", Modifier.weight(1f).clickable { if ((kmh ?: 0) == 0) detail = ObdDetail.MOTOR })
@@ -170,7 +171,7 @@ private fun Gauge(kmh: Int?, rpm: Int?, needle: Color, modifier: Modifier = Modi
 
     Box(modifier.hudPanel(), Alignment.Center) {
         Canvas(Modifier.fillMaxSize().padding(10.dp)) {
-            val d = minOf(size.width, size.height, 190.dp.toPx())
+            val d = minOf(size.width, size.height, 176.dp.toPx())
             val topLeft = Offset((size.width - d) / 2, (size.height - d) / 2)
             val stroke = Stroke(2.5.dp.toPx())
             val inset = 8.dp.toPx()
@@ -199,9 +200,9 @@ private fun Gauge(kmh: Int?, rpm: Int?, needle: Color, modifier: Modifier = Modi
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             if (granted) {
-                Text(kmh?.toString() ?: "--", fontSize = 50.sp, fontWeight = FontWeight.Thin, color = Color.White, letterSpacing = 1.sp)
-                Text("KM/H", fontSize = 11.sp, color = Muted, letterSpacing = 3.sp)
-                Text(if (rpm != null) "$rpm RPM" else "", fontSize = 10.sp, color = Muted, letterSpacing = 1.5.sp)
+                Text(kmh?.toString() ?: "--", fontSize = 42.sp, fontWeight = FontWeight.Medium, color = Color.White)
+                Text("KM/H", fontSize = 10.sp, color = Muted, letterSpacing = 2.sp)
+                Text(if (rpm != null) "$rpm RPM" else "", fontSize = 9.sp, color = Muted, letterSpacing = 1.sp)
             } else {
                 Button(onClick = { request.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) { Text("Activar GPS", fontSize = 14.sp) }
             }
@@ -223,22 +224,19 @@ private fun StatRow(
 ) {
     Column(
         modifier
-            .hudPanel(14.dp)
+            .hudPanel()
             .then(
                 if (onClick != null) Modifier.androidxCombined(onClick, onLongClick) else Modifier,
             )
             .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(Modifier.size(28.dp).border(1.dp, Hud.Line, CircleShape), Alignment.Center) {
-                Icon(icon, null, Modifier.size(17.dp), Accent)
-            }
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(icon, null, Modifier.size(18.dp), Accent)
             Column(Modifier.weight(1f)) {
-                Text(title.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.White, letterSpacing = 1.5.sp)
-                Text(subtitle, fontSize = 10.sp, color = Muted)
+                Text(title.uppercase(), fontSize = 10.sp, color = Muted, letterSpacing = 1.sp, maxLines = 1)
+                Text(value, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
             }
-            Text(value, fontSize = 16.sp, fontWeight = FontWeight.Normal, color = Color.White, fontFamily = FontFamily.Monospace)
         }
         Box(Modifier.fillMaxWidth().padding(top = 4.dp).height(1.5.dp).background(Hud.Line)) {
             Box(Modifier.fillMaxHeight().fillMaxWidth(progress.coerceIn(0f, 1f)).background(Accent))
@@ -253,13 +251,10 @@ private fun Modifier.androidxCombined(onClick: () -> Unit, onLongClick: (() -> U
 @Composable
 private fun MiniStat(icon: ImageVector, label: String, value: String, modifier: Modifier = Modifier) {
     Column(
-        modifier.fillMaxHeight().hudPanel(14.dp).padding(horizontal = 8.dp),
+        modifier.fillMaxHeight().hudPanel().padding(horizontal = 6.dp),
         verticalArrangement = Arrangement.Center,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(icon, null, Modifier.size(14.dp), Accent)
-            Text(label.uppercase(), fontSize = 9.sp, color = Muted, maxLines = 1, letterSpacing = 1.2.sp)
-        }
-        Text(value, fontSize = 17.sp, fontWeight = FontWeight.Normal, color = Color.White, maxLines = 1, fontFamily = FontFamily.Monospace)
+        Text(label.uppercase(), fontSize = 8.sp, color = Muted, maxLines = 1, letterSpacing = 0.5.sp)
+        Text(value, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Color.White, maxLines = 1)
     }
 }

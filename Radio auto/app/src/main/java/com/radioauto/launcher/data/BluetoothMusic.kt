@@ -72,6 +72,12 @@ object BluetoothMusic {
         if (!MediaState.togglePlay()) sendKey(context, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE)
     }
 
+    /** The radio is starting: the phone's music (Bluetooth or the link) stops so the two never overlap. */
+    fun pauseMusic() {
+        if (LinkServer.state.value.track?.playing == true) LinkServer.mediaCommand(MediaAction.PlayPause)
+        if (MediaState.state.value.isPlaying) MediaState.pause()
+    }
+
     fun next(context: Context) {
         announce("next")
         if (!LinkServer.mediaCommand(MediaAction.Next) && !MediaState.skipNext()) sendKey(context, KeyEvent.KEYCODE_MEDIA_NEXT)

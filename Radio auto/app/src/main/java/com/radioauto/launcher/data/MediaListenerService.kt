@@ -51,10 +51,15 @@ data class NowPlaying(
     val sourcePackage: String? = null,
     /** Audio (A2DP) profile connected; without it the radio cannot play the phone's music. */
     val a2dpConnected: Boolean = false,
+    /** What the player says comes next (up to 30 entries); empty when the app does not publish a queue. */
+    val queue: List<QueueEntry> = emptyList(),
 ) {
     /** True when there is something to show: a track name or audio that is playing. */
     val hasMusic: Boolean get() = title.isNotEmpty() || isPlaying
 }
+
+/** One line of the player's queue; [current] marks the track that is playing. */
+data class QueueEntry(val title: String, val subtitle: String, val current: Boolean)
 
 /** Position of the track now, from the last report of the player, which keeps moving while it plays. */
 internal fun extrapolatePosition(
@@ -226,6 +231,12 @@ object MediaState {
 
     fun skipNext(): Boolean = BtMediaConnector.skipToNext() || controller?.transportControls?.skipToNext() != null
 
+    /** Pauses whatever the phone is playing (used when the radio takes over). */
+    fun pause() {
+        if (BtMediaConnector.controller != null) BtMediaConnector.pause()
+        else controller?.transportControls?.pause()
+    }
+
     fun togglePlay(): Boolean {
         if (BtMediaConnector.controller != null) {
             if (BtMediaConnector.isPlaying) BtMediaConnector.pause() else BtMediaConnector.play()
@@ -243,6 +254,9 @@ object MediaState {
     private fun pick(list: List<MediaController>?) {
         fun playing(c: MediaController) = c.playbackState?.state == PlaybackState.STATE_PLAYING
         // The Bluetooth player first (playing, then any), then whatever plays, then the most recent session.
+        // Our own session (the phone of the link) is already shown by the link; it must not count as a second player.
+        val own = appContext?.packageName
+        val list = list?.filter { it.packageName != own }
         val next = list?.firstOrNull { isBtSource(it.packageName) && playing(it) }
             ?: list?.firstOrNull { isBtSource(it.packageName) }
             ?: list?.firstOrNull { playing(it) }
@@ -259,10 +273,14 @@ object MediaState {
         val link = profileLink || connectedPhones.isNotEmpty()
         val now = SystemClock.elapsedRealtime()
         val bt = BtMediaConnector.controller
+        // The internet radio plays audio too, but it is not the phone's music.
+        val audioOn = !RadioPlayer.isPlaying && ctx?.let { (it.getSystemService(Context.AUDIO_SERVICE) as AudioManager).isMusicActive } == true
         _state.value = if (bt != null) {
             val meta = bt.metadata
             val ps = bt.playbackState
-            val playing = ps?.state == PlaybackStateCompat.STATE_PLAYING
+            // Many phones never report PLAYING to the sink: when audio is on and the session did not say pause, it plays.
+            val stopped = ps?.state == PlaybackStateCompat.STATE_PAUSED || ps?.state == PlaybackStateCompat.STATE_STOPPED
+            val playing = ps?.state == PlaybackStateCompat.STATE_PLAYING || (audioOn && !stopped)
             val duration = (meta?.getLong(MediaMetadataCompat.METADATA_KEY_DURATION) ?: 0L).coerceAtLeast(0)
             NowPlaying(
                 btConnected = true,
@@ -279,11 +297,19 @@ object MediaState {
                 ),
                 durationMs = duration,
                 sourcePackage = BLUETOOTH_PACKAGE,
+                queue = bt.queue.orEmpty().take(30).map {
+                    QueueEntry(
+                        it.description.title?.toString().orEmpty(),
+                        it.description.subtitle?.toString().orEmpty(),
+                        ps != null && it.queueId == ps.activeQueueItemId,
+                    )
+                },
             )
         } else if (c != null) {
             val meta = c.metadata
             val ps = c.playbackState
-            val playing = ps?.state == PlaybackState.STATE_PLAYING
+            val stopped = ps?.state == PlaybackState.STATE_PAUSED || ps?.state == PlaybackState.STATE_STOPPED
+            val playing = ps?.state == PlaybackState.STATE_PLAYING || (audioOn && !stopped && (link || isBtSource(c.packageName)))
             val duration = (meta?.getLong(MediaMetadata.METADATA_KEY_DURATION) ?: 0L).coerceAtLeast(0)
             NowPlaying(
                 btConnected = link || isBtSource(c.packageName),
@@ -299,10 +325,16 @@ object MediaState {
                 ),
                 durationMs = duration,
                 sourcePackage = c.packageName,
+                queue = c.queue.orEmpty().take(30).map {
+                    QueueEntry(
+                        it.description.title?.toString().orEmpty(),
+                        it.description.subtitle?.toString().orEmpty(),
+                        ps != null && it.queueId == ps.activeQueueItemId,
+                    )
+                },
             )
         } else {
             // No session: trust the music broadcasts, and otherwise ask the system whether audio is playing.
-            val audioOn = ctx?.let { (it.getSystemService(Context.AUDIO_SERVICE) as AudioManager).isMusicActive } == true
             NowPlaying(
                 btConnected = link,
                 a2dpConnected = BtProfiles.a2dp,

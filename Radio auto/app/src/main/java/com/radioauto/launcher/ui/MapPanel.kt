@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Search
@@ -66,7 +67,7 @@ fun MapPanel(
     onSearch: () -> Unit,
     onHome: () -> Unit,
     onWork: () -> Unit,
-    onSettings: () -> Unit,
+    onChooseApp: () -> Unit,
     modifier: Modifier = Modifier,
     overlay: @Composable () -> Unit = {},
 ) {
@@ -163,7 +164,7 @@ fun MapPanel(
             MapButton(Icons.Default.Search, "Buscar destino", onSearch)
             MapButton(Icons.Default.Home, "Ir a Casa", onHome)
             MapButton(Icons.Default.Work, "Ir a Trabajo", onWork)
-            MapButton(Icons.Default.Settings, "Ajustes", onSettings)
+            MapButton(Icons.Default.Apps, "Elegir app de navegación", onChooseApp)
         }
     }
 }
